@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getAllPostsMeta } from "@/lib/posts";
-import ReadLaterList from "@/components/read-later-list";
+import { getAllResources } from "@/lib/resources";
+import ResourceCard from "@/components/resource-card";
 
 type HomePageProps = {
   searchParams?: Promise<{
@@ -19,31 +20,45 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const query = normalizeQuery(resolvedSearchParams?.q);
 
-  const posts = await getAllPostsMeta({
-    q: query
-  });
+  const [posts, resources] = await Promise.all([
+    getAllPostsMeta({
+      q: query
+    }),
+    getAllResources({
+      q: query
+    })
+  ]);
+
+  const totalResults = posts.length + resources.length;
 
   return (
     <section className="content-stack">
       <header className="content-header">
-        <h1>Posts</h1>
-        <p>
-          {posts.length} статей
-          {query && (
-            <>
-              {" "}
-              по запросу <strong>{query}</strong>
-            </>
-          )}
-        </p>
+        <h1>{query ? "Поиск" : "Статьи"}</h1>
+        {query ? (
+          <p>
+            {totalResults} результатов по запросу <strong>{query}</strong>
+          </p>
+        ) : (
+          <p>{posts.length} статей</p>
+        )}
       </header>
 
-      <ReadLaterList />
+      {query && (
+        <section className="section-head section-head-compact">
+          <h2>Статьи</h2>
+          <p>{posts.length} найдено</p>
+        </section>
+      )}
 
       <div className="post-list">
         {posts.length === 0 ? (
           <article className="panel empty-panel">
-            <p>Ничего не найдено. Попробуй изменить фильтры или опубликовать новую статью.</p>
+            <p>
+              {query
+                ? "По статьям ничего не найдено."
+                : "Ничего не найдено. Попробуй изменить фильтры или опубликовать новую статью."}
+            </p>
           </article>
         ) : (
           posts.map((post) => (
@@ -58,6 +73,27 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           ))
         )}
       </div>
+
+      {query && (
+        <>
+          <section className="section-head section-head-compact">
+            <h2>Ресурсы</h2>
+            <p>{resources.length} найдено</p>
+          </section>
+
+          {resources.length === 0 ? (
+            <article className="panel empty-panel">
+              <p>По ресурсам ничего не найдено.</p>
+            </article>
+          ) : (
+            <div className="resources-grid">
+              {resources.map((resource) => (
+                <ResourceCard key={resource.id} resource={resource} />
+              ))}
+            </div>
+          )}
+        </>
+      )}
     </section>
   );
 }

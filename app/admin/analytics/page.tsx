@@ -11,6 +11,31 @@ export default async function AdminAnalyticsPage() {
   const analytics = await getAnalyticsOverview();
   const maxTopViews = Math.max(...analytics.topPosts.map((post) => post.views), 1);
   const maxDailyViews = Math.max(...analytics.daily.map((day) => day.views), 1);
+  const chartWidth = 760;
+  const chartHeight = 220;
+  const chartPaddingX = 22;
+  const chartPaddingY = 18;
+  const chartUsableHeight = chartHeight - chartPaddingY * 2;
+  const chartStep =
+    analytics.daily.length > 1 ? (chartWidth - chartPaddingX * 2) / (analytics.daily.length - 1) : 0;
+
+  const chartPoints = analytics.daily.map((day, index) => {
+    const x = chartPaddingX + index * chartStep;
+    const y = chartHeight - chartPaddingY - (day.views / maxDailyViews) * chartUsableHeight;
+    return {
+      ...day,
+      x,
+      y
+    };
+  });
+
+  const chartPath = chartPoints.map((point) => `${point.x},${point.y}`).join(" ");
+  const chartAreaPath =
+    chartPoints.length > 0
+      ? `M ${chartPoints[0].x} ${chartHeight - chartPaddingY} L ${chartPoints
+          .map((point) => `${point.x} ${point.y}`)
+          .join(" L ")} L ${chartPoints[chartPoints.length - 1].x} ${chartHeight - chartPaddingY} Z`
+      : "";
 
   return (
     <div className="content-stack">
@@ -33,6 +58,9 @@ export default async function AdminAnalyticsPage() {
         <Link href="/admin/published" className="admin-tab">
           Опубликованные
         </Link>
+        <Link href="/admin/resources" className="admin-tab">
+          Ресурсы
+        </Link>
         <Link href="/admin/about" className="admin-tab">
           Обо мне
         </Link>
@@ -53,10 +81,6 @@ export default async function AdminAnalyticsPage() {
         <article className="panel analytics-card">
           <p>Эмодзи-реакции</p>
           <strong>{analytics.totals.totalReactions}</strong>
-        </article>
-        <article className="panel analytics-card">
-          <p>Оценки</p>
-          <strong>{analytics.totals.totalRatings}</strong>
         </article>
       </section>
 
@@ -100,21 +124,35 @@ export default async function AdminAnalyticsPage() {
         <header className="section-head section-head-compact">
           <h2>Просмотры за 7 дней</h2>
         </header>
-        <div className="analytics-mini-chart">
+        <div className="analytics-line-chart">
           {analytics.daily.length === 0 ? (
             <p>Пока нет данных.</p>
           ) : (
-            analytics.daily.map((day) => (
-              <div key={`day-${day.day}`} className="analytics-mini-col">
-                <div className="analytics-mini-track">
-                  <div
-                    className="analytics-mini-fill"
-                    style={{ height: `${Math.max(8, Math.round((day.views / maxDailyViews) * 100))}%` }}
-                  />
-                </div>
-                <small>{day.day.slice(5)}</small>
-              </div>
-            ))
+            <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} aria-label="График просмотров за неделю">
+              <g className="analytics-line-grid">
+                {[0, 1, 2, 3, 4].map((index) => {
+                  const y = chartPaddingY + (chartUsableHeight / 4) * index;
+                  return <line key={`grid-${index}`} x1={chartPaddingX} y1={y} x2={chartWidth - chartPaddingX} y2={y} />;
+                })}
+              </g>
+              {chartAreaPath ? <path d={chartAreaPath} className="analytics-line-area" /> : null}
+              <polyline points={chartPath} className="analytics-line-path" />
+              {chartPoints.map((point) => (
+                <g key={`day-point-${point.day}`}>
+                  <text
+                    x={point.x}
+                    y={point.y < chartPaddingY + 18 ? point.y + 16 : point.y - 10}
+                    className="analytics-line-value"
+                  >
+                    {point.views}
+                  </text>
+                  <circle cx={point.x} cy={point.y} r={4} className="analytics-line-dot" />
+                  <text x={point.x} y={chartHeight - 4} className="analytics-line-label">
+                    {point.day.slice(5)}
+                  </text>
+                </g>
+              ))}
+            </svg>
           )}
         </div>
         <div className="analytics-list">

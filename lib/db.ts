@@ -4,6 +4,8 @@ import matter from "gray-matter";
 
 const dbPath = path.join(process.cwd(), "rblog.db");
 const postsDir = path.join(process.cwd(), "content", "posts");
+const defaultAboutTitle = "About";
+const defaultWhoTitle = "Кто я";
 const defaultAboutSection = "Коротко о блоге и о чем здесь публикуются материалы.";
 const defaultWhoSection = "Расскажи здесь, кто ты, чем занимаешься и чем можешь быть полезен.";
 
@@ -92,11 +94,45 @@ const initSchema = (db: SqliteDatabase) => {
 
     CREATE INDEX IF NOT EXISTS idx_post_reactions_post_id ON post_reactions(post_id);
     CREATE INDEX IF NOT EXISTS idx_post_reactions_reacted_at ON post_reactions(reacted_at DESC);
+
+    CREATE TABLE IF NOT EXISTS admin_login_attempts (
+      key TEXT PRIMARY KEY,
+      fail_count INTEGER NOT NULL,
+      window_started_at INTEGER NOT NULL,
+      locked_until INTEGER NOT NULL DEFAULT 0,
+      updated_at INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_admin_login_attempts_updated_at ON admin_login_attempts(updated_at DESC);
+
+    CREATE TABLE IF NOT EXISTS resources (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      url TEXT NOT NULL UNIQUE,
+      title TEXT NOT NULL,
+      description TEXT NOT NULL DEFAULT '',
+      image_url TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_resources_updated_at ON resources(updated_at DESC);
   `);
 };
 
 const seedSiteContent = (db: SqliteDatabase) => {
   const now = new Date().toISOString();
+  db.prepare(
+    `
+      INSERT OR IGNORE INTO site_content (section_key, section_value, updated_at)
+      VALUES (?, ?, ?)
+    `
+  ).run("about_title", defaultAboutTitle, now);
+  db.prepare(
+    `
+      INSERT OR IGNORE INTO site_content (section_key, section_value, updated_at)
+      VALUES (?, ?, ?)
+    `
+  ).run("who_i_am_title", defaultWhoTitle, now);
   db.prepare(
     `
       INSERT OR IGNORE INTO site_content (section_key, section_value, updated_at)

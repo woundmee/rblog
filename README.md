@@ -30,6 +30,108 @@ npm run dev
 - Админ-вход: `http://localhost:3000/admin/login`
 - Новая статья: `http://localhost:3000/admin/new`
 
+## Безопасность админ-панели
+
+В проекте добавлены:
+
+- вход только по `ADMIN_PASSWORD_HASH` в production
+- подпись сессионного cookie через `ADMIN_SECRET`
+- `HttpOnly + Secure + SameSite=Strict` cookie
+- ограничение попыток входа (rate-limit + lock)
+- проверка `Origin/Referer` для админских mutating API (`POST/PUT/DELETE`)
+
+### Подготовка production-конфига
+
+1. Сгенерируй hash пароля:
+
+```bash
+npm run admin:hash -- "your-strong-password"
+```
+
+Команда уже выводит значение в правильном формате для `.env.local` (с экранированными `\$`).
+
+2. Сгенерируй `ADMIN_SECRET` (пример):
+
+```bash
+openssl rand -base64 48
+```
+
+3. Заполни `.env.local` (или переменные окружения на хостинге):
+
+```env
+ADMIN_USERNAME=your-login
+ADMIN_PASSWORD_HASH=scrypt\$16384\$8\$1\$...
+ADMIN_SECRET=very-long-random-secret-at-least-32-chars
+ADMIN_SESSION_TTL_SECONDS=43200
+ADMIN_RATE_LIMIT_MAX_ATTEMPTS=5
+ADMIN_RATE_LIMIT_WINDOW_SECONDS=900
+ADMIN_RATE_LIMIT_LOCK_SECONDS=900
+```
+
+### Что означает каждая переменная
+
+- `ADMIN_USERNAME` — логин для входа в админку.
+- `ADMIN_PASSWORD_HASH` — hash пароля (сам пароль в `.env` хранить не нужно).
+  Важно: в `.env` символы `$` должны быть экранированы как `\$`.
+- `ADMIN_SECRET` — секрет для подписи админ-сессии (cookie token).  
+  Если его поменять, текущие админ-сессии станут невалидными и потребуется повторный вход.
+- `ADMIN_PASSWORD` — legacy fallback только для локальной разработки, когда не задан `ADMIN_PASSWORD_HASH`.  
+  Для production лучше не использовать.
+
+### Если забыл пароль
+
+1. Сгенерируй новый hash:
+
+```bash
+npm run admin:hash -- "your-new-strong-password"
+```
+
+2. Замени значение `ADMIN_PASSWORD_HASH` в `.env.local` (или в env на сервере).
+3. Перезапусти приложение.
+
+### Если сработал rate-limit
+
+Сними блокировку командой:
+
+```bash
+npm run admin:unlock
+```
+
+Команда очищает таблицу `admin_login_attempts` в `rblog.db`.
+
+### Если вход не работает после вставки hash
+
+Частая причина: hash вставлен без экранирования `$`, и Next.js \"ломает\" значение при загрузке `.env`.  
+Должно быть так:
+
+```env
+ADMIN_PASSWORD_HASH=scrypt\$16384\$8\$1\$...
+```
+
+### Нужно ли оставлять `ADMIN_PASSWORD`
+
+Если у тебя уже заполнен `ADMIN_PASSWORD_HASH`, то `ADMIN_PASSWORD` можно удалить или закомментировать.  
+Рекомендуется оставить только:
+
+```env
+ADMIN_USERNAME=...
+ADMIN_PASSWORD_HASH=...
+ADMIN_SECRET=...
+```
+
+### `ADMIN_SECRET` и `ADMIN_PASSWORD_HASH` вместе
+
+`ADMIN_PASSWORD_HASH` проверяет пароль во время входа, а `ADMIN_SECRET` подписывает админ-сессию (cookie token) после входа.  
+Поэтому даже если `ADMIN_PASSWORD_HASH` уже задан, `ADMIN_SECRET` все равно обязателен.
+
+Сгенерировать `ADMIN_SECRET` можно так:
+
+```bash
+openssl rand -base64 48
+```
+
+Если потом изменить `ADMIN_SECRET`, все текущие админ-сессии автоматически завершатся и потребуется войти заново.
+
 ## База данных
 
 Файл базы создаётся автоматически в корне проекта:

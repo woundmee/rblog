@@ -10,7 +10,7 @@ import {
   readLaterSaveItems
 } from "@/lib/read-later";
 
-export default function ReadLaterList() {
+export default function BookmarksPageList() {
   const [items, setItems] = useState<ReadLaterItem[]>([]);
 
   useEffect(() => {
@@ -27,7 +27,11 @@ export default function ReadLaterList() {
   };
 
   if (items.length === 0) {
-    return null;
+    return (
+      <article className="panel empty-panel">
+        <p>Пока нет избранного.</p>
+      </article>
+    );
   }
 
   return (

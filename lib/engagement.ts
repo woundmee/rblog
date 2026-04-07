@@ -28,7 +28,6 @@ type AnalyticsTotalsRow = {
   total_views: number;
   unique_visitors: number;
   total_reactions: number;
-  total_ratings: number;
 };
 
 type TopPostRow = {
@@ -142,8 +141,7 @@ export const getAnalyticsOverview = async () => {
         SELECT
           (SELECT COUNT(*) FROM post_views) as total_views,
           (SELECT COUNT(DISTINCT visitor_id) FROM post_views) as unique_visitors,
-          (SELECT COUNT(*) FROM post_reactions WHERE emoji IS NOT NULL) as total_reactions,
-          (SELECT COUNT(*) FROM post_reactions WHERE rating IS NOT NULL) as total_ratings
+          (SELECT COUNT(*) FROM post_reactions WHERE emoji IS NOT NULL) as total_reactions
       `
     )
     .get() as AnalyticsTotalsRow;
@@ -173,8 +171,7 @@ export const getAnalyticsOverview = async () => {
     totals: {
       totalViews: totals.total_views ?? 0,
       uniqueVisitors: totals.unique_visitors ?? 0,
-      totalReactions: totals.total_reactions ?? 0,
-      totalRatings: totals.total_ratings ?? 0
+      totalReactions: totals.total_reactions ?? 0
     },
     topPosts,
     daily

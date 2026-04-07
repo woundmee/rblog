@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createPost } from "@/lib/posts";
-import { isAdminRequest } from "@/lib/auth";
+import { isAdminRequest, isTrustedMutationOrigin } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -13,6 +13,10 @@ type Payload = {
 };
 
 export async function POST(request: Request) {
+  if (!isTrustedMutationOrigin(request)) {
+    return NextResponse.json({ error: "Forbidden origin" }, { status: 403 });
+  }
+
   if (!(await isAdminRequest())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

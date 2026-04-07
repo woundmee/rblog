@@ -26,6 +26,7 @@ export default async function PostPage({
           </Link>
           <ReadLaterButton
             post={{
+              kind: "post",
               id: post.id,
               slug: post.slug,
               title: post.title,

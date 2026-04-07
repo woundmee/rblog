@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { type ReadLaterItem, readLaterLoadItems, readLaterSaveItems } from "@/lib/read-later";
+import { type FavoritePostItem, readLaterItemKey, readLaterLoadItems, readLaterSaveItems } from "@/lib/read-later";
 
 type ReadLaterButtonProps = {
-  post: ReadLaterItem;
+  post: FavoritePostItem;
 };
 
 export default function ReadLaterButton({ post }: ReadLaterButtonProps) {
@@ -12,27 +12,32 @@ export default function ReadLaterButton({ post }: ReadLaterButtonProps) {
 
   useEffect(() => {
     const items = readLaterLoadItems();
-    setSaved(items.some((item) => item.id === post.id));
-  }, [post.id]);
+    const currentKey = readLaterItemKey(post);
+    setSaved(items.some((item) => readLaterItemKey(item) === currentKey));
+  }, [post]);
 
-  const buttonLabel = useMemo(() => (saved ? "Убрать из закладок" : "Читать позже"), [saved]);
+  const buttonLabel = useMemo(() => (saved ? "Убрать из избранного" : "В избранное"), [saved]);
 
   const onToggle = () => {
     const items = readLaterLoadItems();
-    const exists = items.some((item) => item.id === post.id);
+    const currentKey = readLaterItemKey(post);
+    const exists = items.some((item) => readLaterItemKey(item) === currentKey);
     if (exists) {
-      readLaterSaveItems(items.filter((item) => item.id !== post.id));
+      readLaterSaveItems(items.filter((item) => readLaterItemKey(item) !== currentKey));
       setSaved(false);
       return;
     }
-    const next = [post, ...items.filter((item) => item.id !== post.id)].slice(0, 50);
+    const next = [post, ...items.filter((item) => readLaterItemKey(item) !== currentKey)].slice(0, 80);
     readLaterSaveItems(next);
     setSaved(true);
   };
 
   return (
     <button type="button" className={`article-bookmark-btn${saved ? " active" : ""}`} onClick={onToggle}>
-      {buttonLabel}
+      <svg viewBox="0 0 24 24" aria-hidden>
+        <path d="M7 4h10a1 1 0 011 1v15l-6-3-6 3V5a1 1 0 011-1z" />
+      </svg>
+      <span>{buttonLabel}</span>
     </button>
   );
 }

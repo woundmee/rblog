@@ -40,6 +40,10 @@ type SqlRunResult = {
   lastInsertRowid: number | bigint;
 };
 
+type SqlChangesResult = {
+  changes: number;
+};
+
 const estimateReadingTime = (text: string): number => {
   const words = text.trim().split(/\s+/).filter(Boolean).length;
   return Math.max(1, Math.ceil(words / 220));
@@ -267,4 +271,10 @@ export const updatePost = async (
   ).run(input.title, input.excerpt, input.markdown.trim(), category, tags, publishedAt, now, id);
 
   return { id, slug: existing.slug };
+};
+
+export const deletePost = async (id: number): Promise<boolean> => {
+  const db = getDb();
+  const result = db.prepare("DELETE FROM posts WHERE id = ?").run(id) as SqlChangesResult;
+  return result.changes > 0;
 };

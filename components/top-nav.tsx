@@ -6,12 +6,14 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   READ_LATER_UPDATED_EVENT,
   type ReadLaterItem,
+  readLaterItemKey,
   readLaterLoadItems,
   readLaterSaveItems
 } from "@/lib/read-later";
 
 const navItems = [
   { href: "/", label: "Статьи" },
+  { href: "/resources", label: "Ресурсы" },
   { href: "/about", label: "Обо мне" }
 ];
 
@@ -27,10 +29,11 @@ export default function TopNav() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(searchParams.get("q") ?? "");
-  const [shortcutHint, setShortcutHint] = useState("Ctrl+K");
-  const [bookmarksOpen, setBookmarksOpen] = useState(false);
-  const [bookmarks, setBookmarks] = useState<ReadLaterItem[]>([]);
+  const [shortcutHint, setShortcutHint] = useState({ mod: "Ctrl", key: "K" });
+  const [favoritesOpen, setFavoritesOpen] = useState(false);
+  const [favorites, setFavorites] = useState<ReadLaterItem[]>([]);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const hideNav = pathname === "/admin/login";
 
   useEffect(() => {
     setQuery(searchParams.get("q") ?? "");
@@ -38,23 +41,27 @@ export default function TopNav() {
 
   useEffect(() => {
     if (typeof navigator !== "undefined" && /(Mac|iPhone|iPad|iPod)/i.test(navigator.platform)) {
-      setShortcutHint("⌘K");
+      setShortcutHint({ mod: "⌘", key: "K" });
     }
   }, []);
 
   useEffect(() => {
-    const load = () => setBookmarks(readLaterLoadItems());
+    const load = () => setFavorites(readLaterLoadItems());
     load();
     window.addEventListener(READ_LATER_UPDATED_EVENT, load);
     return () => window.removeEventListener(READ_LATER_UPDATED_EVENT, load);
   }, []);
 
   useEffect(() => {
-    setBookmarksOpen(false);
+    setFavoritesOpen(false);
   }, [pathname]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setFavoritesOpen(false);
+        return;
+      }
       if (event.defaultPrevented) {
         return;
       }
@@ -87,11 +94,15 @@ export default function TopNav() {
     router.refresh();
   };
 
-  const removeBookmark = (id: number) => {
-    const next = bookmarks.filter((item) => item.id !== id);
-    setBookmarks(next);
+  const removeFavorite = (itemKey: string) => {
+    const next = favorites.filter((item) => readLaterItemKey(item) !== itemKey);
+    setFavorites(next);
     readLaterSaveItems(next);
   };
+
+  if (hideNav) {
+    return null;
+  }
 
   return (
     <>
@@ -109,11 +120,12 @@ export default function TopNav() {
                 type="search"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Поиск статей"
-                aria-label="Поиск статей"
+                placeholder="Поиск..."
+                aria-label="Поиск"
               />
               <span className="search-shortcut" aria-hidden>
-                {shortcutHint}
+                <kbd className="search-shortcut-mod">{shortcutHint.mod}</kbd>
+                <kbd className="search-shortcut-key">{shortcutHint.key}</kbd>
               </span>
             </form>
           </div>
@@ -130,48 +142,46 @@ export default function TopNav() {
             ))}
             <button
               type="button"
-              className={`center-nav-link nav-icon-btn${bookmarksOpen ? " active" : ""}`}
-              onClick={() => setBookmarksOpen((value) => !value)}
-              aria-label="Закладки"
-              title="Закладки"
+              className={`center-nav-link nav-icon-btn${favoritesOpen ? " active" : ""}`}
+              onClick={() => setFavoritesOpen((value) => !value)}
+              aria-label="Избранное"
+              title="Избранное"
             >
               <svg viewBox="0 0 24 24" aria-hidden>
                 <path d="M7 4h10a1 1 0 011 1v15l-6-3-6 3V5a1 1 0 011-1z" />
               </svg>
             </button>
-            <Link
-              href="/admin/new"
-              className={`center-nav-link nav-icon-btn${pathname.startsWith("/admin") ? " active" : ""}`}
-              aria-label="Админ-панель"
-              title="Админ-панель"
-            >
-              <svg viewBox="0 0 24 24" aria-hidden>
-                <rect x="5" y="11" width="14" height="9" rx="2" />
-                <path d="M8.2 11V8.4A3.8 3.8 0 0112 4.6a3.8 3.8 0 013.8 3.8V11" />
-              </svg>
-            </Link>
           </nav>
         </div>
       </header>
 
-      {bookmarksOpen && (
-        <div className="bookmark-overlay" onClick={() => setBookmarksOpen(false)}>
+      {favoritesOpen && (
+        <div className="bookmark-overlay" onClick={() => setFavoritesOpen(false)}>
           <section className="bookmark-sheet panel" onClick={(event) => event.stopPropagation()}>
             <header className="section-head section-head-compact">
-              <h2>Закладки</h2>
-              <p>{bookmarks.length} статей</p>
+              <h2>Избранное</h2>
+              <p>{favorites.length} элементов</p>
             </header>
             <div className="bookmark-sheet-list">
-              {bookmarks.length === 0 ? (
-                <p className="section-note">Пока ничего не добавлено в «Читать позже».</p>
+              {favorites.length === 0 ? (
+                <p className="section-note">Пока ничего не добавлено в избранное.</p>
               ) : (
-                bookmarks.map((item) => (
-                  <article key={item.id} className="bookmark-sheet-item">
-                    <Link href={`/posts/${item.slug}`}>
-                      <strong>{item.title}</strong>
-                    </Link>
-                    <p>{item.excerpt}</p>
-                    <button type="button" className="btn-secondary" onClick={() => removeBookmark(item.id)}>
+                favorites.map((item) => (
+                  <article key={readLaterItemKey(item)} className="bookmark-sheet-item">
+                    {item.kind === "post" ? (
+                      <Link href={`/posts/${item.slug}`}>
+                        <strong>{item.title}</strong>
+                      </Link>
+                    ) : (
+                      <a href={item.url} target="_blank" rel="noreferrer noopener">
+                        <strong>{item.title}</strong>
+                      </a>
+                    )}
+                    <button
+                      type="button"
+                      className="bookmark-remove-btn"
+                      onClick={() => removeFavorite(readLaterItemKey(item))}
+                    >
                       Удалить
                     </button>
                   </article>
@@ -190,16 +200,14 @@ export default function TopNav() {
           </svg>
           <span>Статьи</span>
         </Link>
-        <button
-          type="button"
-          className={`mobile-nav-link${bookmarksOpen ? " active" : ""}`}
-          onClick={() => setBookmarksOpen((value) => !value)}
-        >
+        <Link href="/resources" className={`mobile-nav-link${isActive(pathname, "/resources") ? " active" : ""}`}>
           <svg viewBox="0 0 24 24" aria-hidden>
-            <path d="M7 4h10a1 1 0 011 1v15l-6-3-6 3V5a1 1 0 011-1z" />
+            <path d="M4 6h16" />
+            <path d="M4 12h16" />
+            <path d="M4 18h16" />
           </svg>
-          <span>Закладки</span>
-        </button>
+          <span>Ресурсы</span>
+        </Link>
         <Link href="/about" className={`mobile-nav-link${isActive(pathname, "/about") ? " active" : ""}`}>
           <svg viewBox="0 0 24 24" aria-hidden>
             <circle cx="12" cy="8" r="3.2" />
@@ -207,12 +215,11 @@ export default function TopNav() {
           </svg>
           <span>Обо мне</span>
         </Link>
-        <Link href="/admin/new" className={`mobile-nav-link${pathname.startsWith("/admin") ? " active" : ""}`}>
+        <Link href="/favorites" className={`mobile-nav-link${isActive(pathname, "/favorites") ? " active" : ""}`}>
           <svg viewBox="0 0 24 24" aria-hidden>
-            <rect x="5" y="11" width="14" height="9" rx="2" />
-            <path d="M8.2 11V8.4A3.8 3.8 0 0112 4.6a3.8 3.8 0 013.8 3.8V11" />
+            <path d="M7 4h10a1 1 0 011 1v15l-6-3-6 3V5a1 1 0 011-1z" />
           </svg>
-          <span>Админ</span>
+          <span>Избранное</span>
         </Link>
       </nav>
     </>

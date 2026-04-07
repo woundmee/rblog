@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getPostById, updatePost } from "@/lib/posts";
-import { isAdminRequest } from "@/lib/auth";
+import { deletePost, getPostById, updatePost } from "@/lib/posts";
+import { isAdminRequest, isTrustedMutationOrigin } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -38,6 +38,10 @@ export async function GET(_: Request, { params }: RouteContext) {
 }
 
 export async function PUT(request: Request, { params }: RouteContext) {
+  if (!isTrustedMutationOrigin(request)) {
+    return NextResponse.json({ error: "Forbidden origin" }, { status: 403 });
+  }
+
   if (!(await isAdminRequest())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -73,5 +77,31 @@ export async function PUT(request: Request, { params }: RouteContext) {
       return NextResponse.json({ error: "Статья не найдена." }, { status: 404 });
     }
     return NextResponse.json({ error: "Не удалось обновить статью." }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request, { params }: RouteContext) {
+  if (!isTrustedMutationOrigin(request)) {
+    return NextResponse.json({ error: "Forbidden origin" }, { status: 403 });
+  }
+
+  if (!(await isAdminRequest())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { id: rawId } = await params;
+  const id = parseId(rawId);
+  if (Number.isNaN(id)) {
+    return NextResponse.json({ error: "Invalid post id" }, { status: 400 });
+  }
+
+  try {
+    const removed = await deletePost(id);
+    if (!removed) {
+      return NextResponse.json({ error: "Статья не найдена." }, { status: 404 });
+    }
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: "Не удалось удалить статью." }, { status: 500 });
   }
 }

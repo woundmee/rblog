@@ -16,11 +16,20 @@ type ColorId = (typeof colorOptions)[number]["id"];
 type ActiveField = "about" | "who";
 
 type AboutEditorFormProps = {
+  initialAboutTitle: string;
+  initialWhoIAmTitle: string;
   initialAbout: string;
   initialWhoIAm: string;
 };
 
-export default function AboutEditorForm({ initialAbout, initialWhoIAm }: AboutEditorFormProps) {
+export default function AboutEditorForm({
+  initialAboutTitle,
+  initialWhoIAmTitle,
+  initialAbout,
+  initialWhoIAm
+}: AboutEditorFormProps) {
+  const [aboutTitle, setAboutTitle] = useState(initialAboutTitle);
+  const [whoIAmTitle, setWhoIAmTitle] = useState(initialWhoIAmTitle);
   const [about, setAbout] = useState(initialAbout);
   const [whoIAm, setWhoIAm] = useState(initialWhoIAm);
   const [pending, setPending] = useState(false);
@@ -138,7 +147,7 @@ export default function AboutEditorForm({ initialAbout, initialWhoIAm }: AboutEd
       const response = await fetch("/api/about", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ about, whoIAm })
+        body: JSON.stringify({ aboutTitle, whoIAmTitle, about, whoIAm })
       });
       const data = (await response.json()) as { error?: string };
       if (!response.ok) {
@@ -160,18 +169,32 @@ export default function AboutEditorForm({ initialAbout, initialWhoIAm }: AboutEd
       <section className="panel editor-panel">
         <header className="section-head">
           <h1>Редактор раздела "Обо мне"</h1>
-          <p>Оба блока поддерживают Markdown, цвета и иконки.</p>
+          <p>Редактируй заголовки и содержание блоков в Markdown-режиме с цветами и иконками.</p>
         </header>
 
         <form className="editor-form" onSubmit={onSubmit}>
           <div className="editor-tools-row">
             <label className="field compact-field">
-              <span>Активное поле</span>
-              <select value={activeField} onChange={(event) => setActiveField(event.target.value as ActiveField)}>
-                <option value="about">About</option>
-                <option value="who">Кто я</option>
-              </select>
+              <span>Заголовок блока 1</span>
+              <input
+                value={aboutTitle}
+                onChange={(event) => setAboutTitle(event.target.value)}
+                placeholder="About"
+                required
+              />
             </label>
+            <label className="field compact-field">
+              <span>Заголовок блока 2</span>
+              <input
+                value={whoIAmTitle}
+                onChange={(event) => setWhoIAmTitle(event.target.value)}
+                placeholder="Кто я"
+                required
+              />
+            </label>
+          </div>
+
+          <div className="editor-tools-row">
             <button
               type="button"
               className="btn-secondary"
@@ -252,7 +275,7 @@ export default function AboutEditorForm({ initialAbout, initialWhoIAm }: AboutEd
                 ))}
               </div>
               <p className="hint">
-                Работает для выбранного поля. Хоткеи: <code>Cmd/Ctrl+B</code>, <code>Cmd/Ctrl+I</code>,{" "}
+                Работает для активного поля (по фокусу). Хоткеи: <code>Cmd/Ctrl+B</code>, <code>Cmd/Ctrl+I</code>,{" "}
                 <code>Cmd/Ctrl+U</code>, <code>Cmd/Ctrl+~</code>, <code>Cmd/Ctrl+K</code>, <code>Cmd/Ctrl+Z</code>.
                 Цвет: <code>{"{{green|текст}}"}</code>, иконка: <code>{"{{icon:github}}"}</code>.
               </p>
@@ -264,7 +287,7 @@ export default function AboutEditorForm({ initialAbout, initialWhoIAm }: AboutEd
           )}
 
           <label className="field">
-            <span>About</span>
+            <span>{aboutTitle.trim() || "About"}</span>
             <textarea
               ref={aboutRef}
               value={about}
@@ -277,7 +300,7 @@ export default function AboutEditorForm({ initialAbout, initialWhoIAm }: AboutEd
           </label>
 
           <label className="field">
-            <span>Кто я</span>
+            <span>{whoIAmTitle.trim() || "Кто я"}</span>
             <textarea
               ref={whoRef}
               value={whoIAm}
@@ -304,11 +327,11 @@ export default function AboutEditorForm({ initialAbout, initialWhoIAm }: AboutEd
         </header>
         <div className="about-preview-stack">
           <section className="about-preview-item">
-            <h3>About</h3>
+            <h3>{aboutTitle.trim() || "About"}</h3>
             <MarkdownRenderer markdown={about.trim().length > 0 ? about : "_Пусто_"} className="markdown-body" />
           </section>
           <section className="about-preview-item">
-            <h3>Кто я</h3>
+            <h3>{whoIAmTitle.trim() || "Кто я"}</h3>
             <MarkdownRenderer markdown={whoIAm.trim().length > 0 ? whoIAm : "_Пусто_"} className="markdown-body" />
           </section>
         </div>

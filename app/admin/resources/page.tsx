@@ -1,22 +1,22 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isAdminRequest } from "@/lib/auth";
-import { getAboutContent } from "@/lib/site-content";
-import AboutEditorForm from "./about-editor-form";
+import { getAllResources } from "@/lib/resources";
+import ResourcesAdminPanel from "./resources-admin-panel";
 
-export default async function AdminAboutPage() {
+export default async function AdminResourcesPage() {
   if (!(await isAdminRequest())) {
-    redirect("/admin/login?next=/admin/about");
+    redirect("/admin/login?next=/admin/resources");
   }
 
-  const aboutContent = await getAboutContent();
+  const resources = await getAllResources();
 
   return (
     <div className="content-stack">
       <section className="panel admin-shell-head">
         <div className="admin-shell-title">
           <h1>Админ-панель</h1>
-          <p>Редактирование разделов профиля и публикаций.</p>
+          <p>Управление карточками полезных ресурсов.</p>
         </div>
         <form action="/api/auth/logout" method="post">
           <button type="submit" className="btn-secondary">
@@ -32,10 +32,10 @@ export default async function AdminAboutPage() {
         <Link href="/admin/published" className="admin-tab">
           Опубликованные
         </Link>
-        <Link href="/admin/resources" className="admin-tab">
+        <Link href="/admin/resources" className="admin-tab active">
           Ресурсы
         </Link>
-        <Link href="/admin/about" className="admin-tab active">
+        <Link href="/admin/about" className="admin-tab">
           Обо мне
         </Link>
         <Link href="/admin/analytics" className="admin-tab">
@@ -43,12 +43,7 @@ export default async function AdminAboutPage() {
         </Link>
       </section>
 
-      <AboutEditorForm
-        initialAboutTitle={aboutContent.aboutTitle}
-        initialWhoIAmTitle={aboutContent.whoIAmTitle}
-        initialAbout={aboutContent.about}
-        initialWhoIAm={aboutContent.whoIAm}
-      />
+      <ResourcesAdminPanel initialResources={resources} />
     </div>
   );
 }

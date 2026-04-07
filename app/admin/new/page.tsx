@@ -29,6 +29,9 @@ export default async function NewPostPage() {
         <Link href="/admin/published" className="admin-tab">
           Опубликованные
         </Link>
+        <Link href="/admin/resources" className="admin-tab">
+          Ресурсы
+        </Link>
         <Link href="/admin/about" className="admin-tab">
           Обо мне
         </Link>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isAdminRequest } from "@/lib/auth";
 import { getAdminPosts } from "@/lib/posts";
+import AdminPublishedActions from "@/components/admin-published-actions";
 
 export default async function AdminPublishedPage() {
   if (!(await isAdminRequest())) {
@@ -31,6 +32,9 @@ export default async function AdminPublishedPage() {
         <Link href="/admin/published" className="admin-tab active">
           Опубликованные
         </Link>
+        <Link href="/admin/resources" className="admin-tab">
+          Ресурсы
+        </Link>
         <Link href="/admin/about" className="admin-tab">
           Обо мне
         </Link>
@@ -54,9 +58,7 @@ export default async function AdminPublishedPage() {
                   <h3>{post.title}</h3>
                   <p>{new Date(post.date).toLocaleDateString("ru-RU")}</p>
                 </div>
-                <Link href={`/admin/edit/${post.id}`} className="btn-secondary">
-                  Редактировать
-                </Link>
+                <AdminPublishedActions id={post.id} />
               </article>
             ))}
           </div>

@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "admin:hash": "node scripts/generate-admin-password-hash.mjs",
+    "admin:unlock": "node scripts/admin-unlock.mjs"
   },
   "dependencies": {
     "better-sqlite3": "^11.8.1",
