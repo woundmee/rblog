@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { isAdminRequest } from "@/lib/auth";
 import { getAdminPostsPage } from "@/lib/posts";
 import AdminPublishedActions from "@/components/admin-published-actions";
+import AdminTabs from "@/components/admin-tabs";
 
 type AdminPublishedPageProps = {
   searchParams?: Promise<{
@@ -68,23 +69,7 @@ export default async function AdminPublishedPage({ searchParams }: AdminPublishe
         </form>
       </section>
 
-      <section className="panel admin-tabs">
-        <Link href="/admin/new" className="admin-tab">
-          Статьи
-        </Link>
-        <Link href="/admin/published" className="admin-tab active">
-          Опубликованные
-        </Link>
-        <Link href="/admin/resources" className="admin-tab">
-          Ресурсы
-        </Link>
-        <Link href="/admin/about" className="admin-tab">
-          Обо мне
-        </Link>
-        <Link href="/admin/analytics" className="admin-tab">
-          Аналитика
-        </Link>
-      </section>
+      <AdminTabs active="published" />
 
       <section className="panel admin-list">
         <header className="section-head section-head-compact admin-list-header">

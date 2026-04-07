@@ -8,6 +8,8 @@ const defaultAboutTitle = "About";
 const defaultWhoTitle = "Кто я";
 const defaultAboutSection = "Коротко о блоге и о чем здесь публикуются материалы.";
 const defaultWhoSection = "Расскажи здесь, кто ты, чем занимаешься и чем можешь быть полезен.";
+const defaultAdEnabled = "0";
+const defaultAdMarkdown = "###### Партнёрский блок\nКороткий дополнительный текст в нейтральном стиле.";
 
 type SqliteDatabase = {
   exec: (sql: string) => void;
@@ -36,13 +38,13 @@ const loadBetterSqlite = (): new (filename: string) => SqliteDatabase => {
 
 const estimateReadingExcerpt = (content: string): string => content.replace(/\s+/g, " ").trim().slice(0, 180);
 
-const parseTags = (value: unknown): string[] => {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-  return value
-    .map((item) => (typeof item === "string" ? item.trim().toLowerCase() : ""))
-    .filter(Boolean);
+type TableInfoRow = {
+  name: string;
+};
+
+const hasColumn = (db: SqliteDatabase, table: string, column: string): boolean => {
+  const columns = db.prepare(`PRAGMA table_info(${table})`).all() as TableInfoRow[];
+  return columns.some((item) => item.name === column);
 };
 
 const initSchema = (db: SqliteDatabase) => {
@@ -53,16 +55,12 @@ const initSchema = (db: SqliteDatabase) => {
       title TEXT NOT NULL,
       excerpt TEXT NOT NULL,
       content TEXT NOT NULL,
-      category TEXT NOT NULL DEFAULT 'general',
-      tags TEXT NOT NULL DEFAULT '[]',
       published_at TEXT NOT NULL,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
 
-    CREATE INDEX IF NOT EXISTS idx_posts_slug ON posts(slug);
     CREATE INDEX IF NOT EXISTS idx_posts_published_at ON posts(published_at DESC);
-    CREATE INDEX IF NOT EXISTS idx_posts_category ON posts(category);
 
     CREATE TABLE IF NOT EXISTS site_content (
       section_key TEXT PRIMARY KEY,
@@ -87,13 +85,11 @@ const initSchema = (db: SqliteDatabase) => {
       post_id INTEGER NOT NULL,
       visitor_id TEXT NOT NULL,
       emoji TEXT,
-      rating INTEGER,
       reacted_at TEXT NOT NULL,
       PRIMARY KEY(post_id, visitor_id),
       FOREIGN KEY(post_id) REFERENCES posts(id) ON DELETE CASCADE
     );
 
-    CREATE INDEX IF NOT EXISTS idx_post_reactions_post_id ON post_reactions(post_id);
     CREATE INDEX IF NOT EXISTS idx_post_reactions_reacted_at ON post_reactions(reacted_at DESC);
 
     CREATE TABLE IF NOT EXISTS admin_login_attempts (
@@ -117,7 +113,81 @@ const initSchema = (db: SqliteDatabase) => {
     );
 
     CREATE INDEX IF NOT EXISTS idx_resources_updated_at ON resources(updated_at DESC);
+
+    -- Remove redundant indexes duplicated by unique/primary keys.
+    DROP INDEX IF EXISTS idx_posts_slug;
+    DROP INDEX IF EXISTS idx_posts_category;
+    DROP INDEX IF EXISTS idx_post_reactions_post_id;
   `);
+};
+
+const migrateLegacySchemaIfNeeded = (db: SqliteDatabase) => {
+  const needsPostsMigration = hasColumn(db, "posts", "category") || hasColumn(db, "posts", "tags");
+  const needsReactionsMigration = hasColumn(db, "post_reactions", "rating");
+
+  if (!needsPostsMigration && !needsReactionsMigration) {
+    return;
+  }
+
+  db.exec("PRAGMA foreign_keys = OFF;");
+  db.exec("BEGIN");
+
+  try {
+    if (needsPostsMigration) {
+      db.exec(`
+        CREATE TABLE posts_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          slug TEXT NOT NULL UNIQUE,
+          title TEXT NOT NULL,
+          excerpt TEXT NOT NULL,
+          content TEXT NOT NULL,
+          published_at TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        );
+
+        INSERT INTO posts_new (id, slug, title, excerpt, content, published_at, created_at, updated_at)
+        SELECT id, slug, title, excerpt, content, published_at, created_at, updated_at
+        FROM posts;
+
+        DROP TABLE posts;
+        ALTER TABLE posts_new RENAME TO posts;
+        CREATE INDEX idx_posts_published_at ON posts(published_at DESC);
+      `);
+    }
+
+    if (needsReactionsMigration) {
+      db.exec(`
+        CREATE TABLE post_reactions_new (
+          post_id INTEGER NOT NULL,
+          visitor_id TEXT NOT NULL,
+          emoji TEXT,
+          reacted_at TEXT NOT NULL,
+          PRIMARY KEY(post_id, visitor_id),
+          FOREIGN KEY(post_id) REFERENCES posts(id) ON DELETE CASCADE
+        );
+
+        INSERT INTO post_reactions_new (post_id, visitor_id, emoji, reacted_at)
+        SELECT post_id, visitor_id, emoji, reacted_at
+        FROM post_reactions;
+
+        DROP TABLE post_reactions;
+        ALTER TABLE post_reactions_new RENAME TO post_reactions;
+        CREATE INDEX idx_post_reactions_reacted_at ON post_reactions(reacted_at DESC);
+      `);
+    }
+
+    db.exec("DROP INDEX IF EXISTS idx_posts_category;");
+    db.exec("DROP INDEX IF EXISTS idx_posts_slug;");
+    db.exec("DROP INDEX IF EXISTS idx_post_reactions_post_id;");
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    db.exec("PRAGMA foreign_keys = ON;");
+    throw error;
+  }
+
+  db.exec("PRAGMA foreign_keys = ON;");
 };
 
 const seedSiteContent = (db: SqliteDatabase) => {
@@ -146,6 +216,18 @@ const seedSiteContent = (db: SqliteDatabase) => {
       VALUES (?, ?, ?)
     `
   ).run("who_i_am", defaultWhoSection, now);
+  db.prepare(
+    `
+      INSERT OR IGNORE INTO site_content (section_key, section_value, updated_at)
+      VALUES (?, ?, ?)
+    `
+  ).run("ad_enabled", defaultAdEnabled, now);
+  db.prepare(
+    `
+      INSERT OR IGNORE INTO site_content (section_key, section_value, updated_at)
+      VALUES (?, ?, ?)
+    `
+  ).run("ad_markdown", defaultAdMarkdown, now);
 };
 
 const migrateMarkdownIfNeeded = (db: SqliteDatabase) => {
@@ -166,8 +248,8 @@ const migrateMarkdownIfNeeded = (db: SqliteDatabase) => {
   }
 
   const insert = db.prepare(`
-    INSERT OR IGNORE INTO posts (slug, title, excerpt, content, category, tags, published_at, created_at, updated_at)
-    VALUES (@slug, @title, @excerpt, @content, @category, @tags, @publishedAt, @createdAt, @updatedAt)
+    INSERT OR IGNORE INTO posts (slug, title, excerpt, content, published_at, created_at, updated_at)
+    VALUES (@slug, @title, @excerpt, @content, @publishedAt, @createdAt, @updatedAt)
   `);
 
   const now = new Date().toISOString();
@@ -186,19 +268,11 @@ const migrateMarkdownIfNeeded = (db: SqliteDatabase) => {
       typeof parsed.data.date === "string" && parsed.data.date.trim().length > 0
         ? parsed.data.date
         : now.slice(0, 10);
-    const category =
-      typeof parsed.data.category === "string" && parsed.data.category.trim().length > 0
-        ? parsed.data.category.trim().toLowerCase()
-        : "general";
-    const tags = JSON.stringify(parseTags(parsed.data.tags));
-
     insert.run({
       slug,
       title,
       excerpt,
       content: parsed.content,
-      category,
-      tags,
       publishedAt,
       createdAt: now,
       updatedAt: now
@@ -211,7 +285,9 @@ export const getDb = (): SqliteDatabase => {
     const DatabaseCtor = loadBetterSqlite();
     dbInstance = new DatabaseCtor(dbPath);
     dbInstance.pragma("journal_mode = WAL");
+    dbInstance.pragma("foreign_keys = ON");
     initSchema(dbInstance);
+    migrateLegacySchemaIfNeeded(dbInstance);
     seedSiteContent(dbInstance);
     migrateMarkdownIfNeeded(dbInstance);
   }

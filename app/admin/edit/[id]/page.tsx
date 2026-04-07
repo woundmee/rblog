@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { isAdminRequest } from "@/lib/auth";
 import { getPostById } from "@/lib/posts";
+import AdminTabs from "@/components/admin-tabs";
 import PostEditorForm from "../../post-editor-form";
 
 const parseId = (value: string): number => Number.parseInt(value, 10);
@@ -41,23 +42,7 @@ export default async function EditPostPage({ params }: EditPostPageProps) {
         </form>
       </section>
 
-      <section className="panel admin-tabs">
-        <Link href="/admin/new" className="admin-tab">
-          Статьи
-        </Link>
-        <Link href="/admin/published" className="admin-tab active">
-          Опубликованные
-        </Link>
-        <Link href="/admin/resources" className="admin-tab">
-          Ресурсы
-        </Link>
-        <Link href="/admin/about" className="admin-tab">
-          Обо мне
-        </Link>
-        <Link href="/admin/analytics" className="admin-tab">
-          Аналитика
-        </Link>
-      </section>
+      <AdminTabs active="published" />
 
       <section className="panel">
         <Link href="/admin/published" className="btn-secondary">

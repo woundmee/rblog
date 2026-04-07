@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isAdminRequest } from "@/lib/auth";
+import AdminTabs from "@/components/admin-tabs";
 import PostEditorForm from "../post-editor-form";
 
 export default async function NewPostPage() {
@@ -22,23 +23,7 @@ export default async function NewPostPage() {
         </form>
       </section>
 
-      <section className="panel admin-tabs">
-        <Link href="/admin/new" className="admin-tab active">
-          Статьи
-        </Link>
-        <Link href="/admin/published" className="admin-tab">
-          Опубликованные
-        </Link>
-        <Link href="/admin/resources" className="admin-tab">
-          Ресурсы
-        </Link>
-        <Link href="/admin/about" className="admin-tab">
-          Обо мне
-        </Link>
-        <Link href="/admin/analytics" className="admin-tab">
-          Аналитика
-        </Link>
-      </section>
+      <AdminTabs active="new" />
 
       <PostEditorForm mode="create" />
 

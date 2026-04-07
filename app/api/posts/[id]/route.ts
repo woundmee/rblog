@@ -9,7 +9,6 @@ type Payload = {
   excerpt?: string;
   date?: string;
   markdown?: string;
-  tags?: string[];
 };
 
 const parseId = (value: string): number => Number.parseInt(value, 10);
@@ -66,8 +65,7 @@ export async function PUT(request: Request, { params }: RouteContext) {
       title,
       excerpt,
       date: body.date?.trim(),
-      markdown,
-      tags: body.tags
+      markdown
     });
 
     return NextResponse.json({ ok: true, slug: updated.slug });

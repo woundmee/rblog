@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isAdminRequest } from "@/lib/auth";
 import { getAdminResourcesPage } from "@/lib/resources";
+import AdminTabs from "@/components/admin-tabs";
 import ResourcesAdminPanel from "./resources-admin-panel";
 
 type AdminResourcesPageProps = {
@@ -55,23 +55,7 @@ export default async function AdminResourcesPage({ searchParams }: AdminResource
         </form>
       </section>
 
-      <section className="panel admin-tabs">
-        <Link href="/admin/new" className="admin-tab">
-          Статьи
-        </Link>
-        <Link href="/admin/published" className="admin-tab">
-          Опубликованные
-        </Link>
-        <Link href="/admin/resources" className="admin-tab active">
-          Ресурсы
-        </Link>
-        <Link href="/admin/about" className="admin-tab">
-          Обо мне
-        </Link>
-        <Link href="/admin/analytics" className="admin-tab">
-          Аналитика
-        </Link>
-      </section>
+      <AdminTabs active="resources" />
 
       <ResourcesAdminPanel
         initialResources={resourcesPage.items}

@@ -11,7 +11,7 @@ export const iconLibrary: IconDefinition[] = [
   { id: "terminal", label: "Terminal", body: '<path d="M6 9l3 3-3 3" /><path d="M11 16h7" /><rect x="3" y="5" width="18" height="14" rx="2" />' },
   { id: "link", label: "Link", body: '<path d="M10.5 13.5l3-3" /><path d="M8.1 15.9l-1.6 1.6a3 3 0 01-4.2-4.2l1.6-1.6" /><path d="M15.9 8.1l1.6-1.6a3 3 0 114.2 4.2l-1.6 1.6" />' },
   { id: "user", label: "User", body: '<circle cx="12" cy="8" r="3.2" /><path d="M5 20c1.6-3.6 4-5.4 7-5.4s5.4 1.8 7 5.4" />' },
-  { id: "mail", label: "Mail", body: '<rect x="3" y="6" width="18" height="12" rx="2" /><path d="M4.2 7.4L12 12.8l7.8-5.4" />' },
+  { id: "mail", label: "Mail", body: '<path d="M4 7h16v10H4z" /><path d="M4 8l8 5 8-5" />' },
   { id: "phone", label: "Phone", body: '<path d="M7.4 3h2.7l1.2 3.6-1.7 1.7a13 13 0 005.2 5.2l1.7-1.7 3.6 1.2v2.7a2.3 2.3 0 01-2.5 2.3A16.8 16.8 0 014.9 6.2 2.3 2.3 0 017.4 3z" />' },
   { id: "globe", label: "Globe", body: '<circle cx="12" cy="12" r="9" /><path d="M3 12h18" /><path d="M12 3a14.5 14.5 0 010 18" /><path d="M12 3a14.5 14.5 0 000 18" />' },
   { id: "bookmark", label: "Bookmark", body: '<path d="M7 4h10a1 1 0 011 1v15l-6-3-6 3V5a1 1 0 011-1z" />' },

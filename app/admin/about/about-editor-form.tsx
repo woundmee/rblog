@@ -282,9 +282,7 @@ export default function AboutEditorForm({
             </section>
           )}
 
-          {showIcons && (
-            <IconPicker onInsert={insertSnippet} className="panel icon-picker-panel-inline" />
-          )}
+          {showIcons && <IconPicker onInsert={insertSnippet} className="panel icon-picker-panel-inline" />}
 
           <label className="field">
             <span>{aboutTitle.trim() || "About"}</span>

@@ -6,23 +6,16 @@ type ReactionEmoji = (typeof reactionEmojiOptions)[number];
 
 type ReactionInput = {
   emoji?: string | null;
-  rating?: number | null;
 };
 
 type ReactionRow = {
   emoji: string | null;
-  rating: number | null;
   reacted_at: string;
 };
 
 type EmojiCountRow = {
   emoji: string;
   count: number;
-};
-
-type RatingRow = {
-  average_rating: number | null;
-  total_ratings: number;
 };
 
 type AnalyticsTotalsRow = {
@@ -53,28 +46,11 @@ const sanitizeEmoji = (value: string | null | undefined): ReactionEmoji | null =
   return reactionEmojiOptions.includes(value as ReactionEmoji) ? (value as ReactionEmoji) : null;
 };
 
-const sanitizeRating = (value: number | null | undefined): number | null => {
-  if (typeof value !== "number" || !Number.isFinite(value)) {
-    return null;
-  }
-  const rounded = Math.round(value);
-  if (rounded < 1 || rounded > 5) {
-    return null;
-  }
-  return rounded;
-};
-
 const getReactionSummary = (postId: number, visitorId?: string) => {
   const db = getDb();
   const emojiRows = db
     .prepare("SELECT emoji, COUNT(*) as count FROM post_reactions WHERE post_id = ? AND emoji IS NOT NULL GROUP BY emoji")
     .all(postId) as EmojiCountRow[];
-
-  const ratingRow = db
-    .prepare(
-      "SELECT AVG(rating) as average_rating, COUNT(rating) as total_ratings FROM post_reactions WHERE post_id = ? AND rating IS NOT NULL"
-    )
-    .get(postId) as RatingRow;
 
   const emojiCounts = reactionEmojiOptions.map((emoji) => {
     const found = emojiRows.find((row) => row.emoji === emoji);
@@ -82,22 +58,17 @@ const getReactionSummary = (postId: number, visitorId?: string) => {
   });
 
   let userEmoji: ReactionEmoji | null = null;
-  let userRating: number | null = null;
 
   if (visitorId) {
     const userRow = db
-      .prepare("SELECT emoji, rating FROM post_reactions WHERE post_id = ? AND visitor_id = ? LIMIT 1")
+      .prepare("SELECT emoji FROM post_reactions WHERE post_id = ? AND visitor_id = ? LIMIT 1")
       .get(postId, visitorId) as ReactionRow | undefined;
     userEmoji = sanitizeEmoji(userRow?.emoji);
-    userRating = sanitizeRating(userRow?.rating);
   }
 
   return {
     emojiCounts,
-    averageRating: ratingRow.average_rating ? Number(ratingRow.average_rating.toFixed(1)) : null,
-    totalRatings: ratingRow.total_ratings ?? 0,
-    userEmoji,
-    userRating
+    userEmoji
   };
 };
 
@@ -124,21 +95,19 @@ export const getPostReactions = async (postId: number, visitorId?: string) => {
 
 export const upsertPostReaction = async (postId: number, visitorId: string, input: ReactionInput) => {
   const emoji = sanitizeEmoji(input.emoji);
-  const rating = sanitizeRating(input.rating);
   const db = getDb();
   const existing = db
-    .prepare("SELECT emoji, rating, reacted_at FROM post_reactions WHERE post_id = ? AND visitor_id = ? LIMIT 1")
+    .prepare("SELECT emoji, reacted_at FROM post_reactions WHERE post_id = ? AND visitor_id = ? LIMIT 1")
     .get(postId, visitorId) as ReactionRow | undefined;
 
-  if (!emoji && !rating) {
+  if (!emoji) {
     db.prepare("DELETE FROM post_reactions WHERE post_id = ? AND visitor_id = ?").run(postId, visitorId);
     return getReactionSummary(postId, visitorId);
   }
 
   if (existing) {
     const existingEmoji = sanitizeEmoji(existing.emoji);
-    const existingRating = sanitizeRating(existing.rating);
-    if (existingEmoji === emoji && existingRating === rating) {
+    if (existingEmoji === emoji) {
       return getReactionSummary(postId, visitorId);
     }
 
@@ -150,14 +119,13 @@ export const upsertPostReaction = async (postId: number, visitorId: string, inpu
 
   db.prepare(
     `
-      INSERT INTO post_reactions (post_id, visitor_id, emoji, rating, reacted_at)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO post_reactions (post_id, visitor_id, emoji, reacted_at)
+      VALUES (?, ?, ?, ?)
       ON CONFLICT(post_id, visitor_id) DO UPDATE SET
         emoji = excluded.emoji,
-        rating = excluded.rating,
         reacted_at = excluded.reacted_at
     `
-  ).run(postId, visitorId, emoji, rating, new Date().toISOString());
+  ).run(postId, visitorId, emoji, new Date().toISOString());
 
   return getReactionSummary(postId, visitorId);
 };

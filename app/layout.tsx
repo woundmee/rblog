@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense, type ReactNode } from "react";
 import Link from "next/link";
 import TopNav from "@/components/top-nav";
+import AdBanner from "@/components/ad-banner";
 import { getSiteUrl } from "@/lib/site-url";
 import "./globals.css";
 
@@ -56,6 +57,9 @@ export default function RootLayout({
         <div className="page-shell">
           <Suspense fallback={null}>
             <TopNav />
+          </Suspense>
+          <Suspense fallback={null}>
+            <AdBanner />
           </Suspense>
           <main className="content-area">{children}</main>
           <footer className="site-footer" aria-label="Footer">

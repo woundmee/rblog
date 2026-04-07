@@ -175,6 +175,47 @@ a {
   margin-bottom: 18px;
 }
 
+.ad-banner-wrap {
+  margin: -8px 0 14px;
+}
+
+.ad-banner {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface) 85%, transparent);
+  padding: 6px 12px 8px;
+  opacity: 0.88;
+}
+
+.markdown-body.ad-banner-markdown {
+  margin-top: 0;
+  line-height: 1.4;
+}
+
+.markdown-body.ad-banner-markdown h1,
+.markdown-body.ad-banner-markdown h2,
+.markdown-body.ad-banner-markdown h3,
+.markdown-body.ad-banner-markdown h4,
+.markdown-body.ad-banner-markdown h5,
+.markdown-body.ad-banner-markdown h6 {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-2);
+}
+
+.markdown-body.ad-banner-markdown p {
+  margin: 2px 0 0;
+  font-size: 0.76rem;
+  color: var(--text-3);
+}
+
+.markdown-body.ad-banner-markdown a {
+  color: var(--text-2);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .topbar {
   width: 100%;
   border: 1px solid var(--line);
@@ -884,6 +925,12 @@ a {
   color: var(--text-2);
 }
 
+.markdown-body hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 1.2rem 0;
+}
+
 .md-quote {
   margin: 14px 0;
   border-left: 3px solid var(--line-strong);
@@ -1158,6 +1205,41 @@ a {
 
 .compact-field select {
   height: 40px;
+}
+
+.ad-editor-panel {
+  display: grid;
+  gap: 10px;
+  border-radius: 12px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+}
+
+.ad-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-2);
+  font-size: 0.84rem;
+}
+
+.ad-toggle input {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--active-bg);
+}
+
+.markdown-body.ad-preview-markdown {
+  margin-top: 0;
+}
+
+.markdown-body.ad-preview-markdown h1,
+.markdown-body.ad-preview-markdown h2,
+.markdown-body.ad-preview-markdown h3,
+.markdown-body.ad-preview-markdown h4,
+.markdown-body.ad-preview-markdown h5,
+.markdown-body.ad-preview-markdown h6 {
+  margin-top: 0;
 }
 
 .icon-picker {

@@ -13,6 +13,20 @@ type MarkdownRendererProps = {
   className?: string;
 };
 
+const normalizeLinkHref = (value: string): string => {
+  const href = value.trim();
+  if (href.length === 0) {
+    return href;
+  }
+  if (/^(https?:|mailto:|tel:|\/|#)/i.test(href)) {
+    return href;
+  }
+  if (/^[\w.-]+\.[a-z]{2,}([/:?#].*)?$/i.test(href)) {
+    return `https://${href}`;
+  }
+  return href;
+};
+
 const sanitizeSchema = {
   ...defaultSchema,
   tagNames: [...(defaultSchema.tagNames ?? []), "span", "svg", "path", "title"],
@@ -152,6 +166,16 @@ export default function MarkdownRenderer({ markdown, className }: MarkdownRender
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema], rehypeHighlight]}
         components={{
+          a: ({ href, children }) => {
+            const rawHref = typeof href === "string" ? href : "";
+            const normalizedHref = normalizeLinkHref(rawHref);
+
+            return (
+              <a href={normalizedHref}>
+                {children}
+              </a>
+            );
+          },
           pre: ({ children }) => <EnhancedPre>{children}</EnhancedPre>,
           blockquote: ({ children }) => {
             const callout = detectCallout(children);

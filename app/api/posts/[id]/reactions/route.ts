@@ -13,7 +13,6 @@ type RouteContext = {
 
 type ReactionPayload = {
   emoji?: string | null;
-  rating?: number | null;
 };
 
 const parseId = (value: string): number => Number.parseInt(value, 10);

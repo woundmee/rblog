@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isAdminRequest } from "@/lib/auth";
 import { getAnalyticsOverview } from "@/lib/engagement";
+import AdminTabs from "@/components/admin-tabs";
 
 export default async function AdminAnalyticsPage() {
   if (!(await isAdminRequest())) {
@@ -51,23 +52,7 @@ export default async function AdminAnalyticsPage() {
         </form>
       </section>
 
-      <section className="panel admin-tabs">
-        <Link href="/admin/new" className="admin-tab">
-          Статьи
-        </Link>
-        <Link href="/admin/published" className="admin-tab">
-          Опубликованные
-        </Link>
-        <Link href="/admin/resources" className="admin-tab">
-          Ресурсы
-        </Link>
-        <Link href="/admin/about" className="admin-tab">
-          Обо мне
-        </Link>
-        <Link href="/admin/analytics" className="admin-tab active">
-          Аналитика
-        </Link>
-      </section>
+      <AdminTabs active="analytics" />
 
       <section className="analytics-grid">
         <article className="panel analytics-card">

@@ -11,6 +11,29 @@ const escapeHtml = (value: string): string =>
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
 
+const trailingPunctuationRegex = /[.,!?;:]+$/;
+
+export const normalizeMarkdownLinks = (value: string): string =>
+  value.replace(
+    /(^|[^!])\[([^\]\n]+)\](?!\()(\s*)(https?:\/\/[^\s<]+)/gim,
+    (_, prefix: string, label: string, _spacing: string, rawHref: string) => {
+      let href = rawHref.trim();
+      let trailing = "";
+
+      if (href.endsWith(")")) {
+        href = href.slice(0, -1);
+      }
+
+      const punctuationMatch = href.match(trailingPunctuationRegex);
+      if (punctuationMatch) {
+        trailing = punctuationMatch[0];
+        href = href.slice(0, -trailing.length);
+      }
+
+      return `${prefix}[${label}](${href})${trailing}`;
+    }
+  );
+
 export const applyColorTokens = (markdown: string): string => {
   const withIcons = markdown.replace(iconTokenRegex, (_, iconId: string, color: string | undefined) => {
     const icon = getIconById(iconId);

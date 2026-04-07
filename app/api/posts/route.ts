@@ -9,7 +9,6 @@ type Payload = {
   excerpt?: string;
   date?: string;
   markdown?: string;
-  tags?: string[];
 };
 
 const readSearchParam = (params: URLSearchParams, key: string): string => params.get(key)?.trim() ?? "";
@@ -64,8 +63,7 @@ export async function POST(request: Request) {
       title,
       excerpt,
       date: body.date?.trim(),
-      markdown,
-      tags: body.tags
+      markdown
     });
 
     return NextResponse.json({ ok: true, slug: created.slug, id: created.id }, { status: 201 });

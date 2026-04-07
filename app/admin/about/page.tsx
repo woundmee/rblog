@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isAdminRequest } from "@/lib/auth";
 import { getAboutContent } from "@/lib/site-content";
+import AdminTabs from "@/components/admin-tabs";
 import AboutEditorForm from "./about-editor-form";
 
 export default async function AdminAboutPage() {
@@ -25,23 +25,7 @@ export default async function AdminAboutPage() {
         </form>
       </section>
 
-      <section className="panel admin-tabs">
-        <Link href="/admin/new" className="admin-tab">
-          Статьи
-        </Link>
-        <Link href="/admin/published" className="admin-tab">
-          Опубликованные
-        </Link>
-        <Link href="/admin/resources" className="admin-tab">
-          Ресурсы
-        </Link>
-        <Link href="/admin/about" className="admin-tab active">
-          Обо мне
-        </Link>
-        <Link href="/admin/analytics" className="admin-tab">
-          Аналитика
-        </Link>
-      </section>
+      <AdminTabs active="about" />
 
       <AboutEditorForm
         initialAboutTitle={aboutContent.aboutTitle}
