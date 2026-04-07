@@ -40,8 +40,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, resource }, { status: 201 });
   } catch (error) {
     const message = (error as Error).message;
-    if (message === "Invalid resource URL") {
+    if (message === "Invalid resource URL" || message === "Too many redirects") {
       return NextResponse.json({ error: "Некорректная ссылка. Используй http/https URL." }, { status: 400 });
+    }
+    if (message === "Forbidden resource host") {
+      return NextResponse.json(
+        { error: "Локальные и внутренние адреса запрещены. Используй публичный URL ресурса." },
+        { status: 400 }
+      );
     }
     if (message === "Resource title required") {
       return NextResponse.json({ error: "Укажи заголовок ресурса." }, { status: 400 });

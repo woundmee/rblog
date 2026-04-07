@@ -4,6 +4,19 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+const normalizeNextPath = (value: string | null): string => {
+  if (!value) {
+    return "/admin/new";
+  }
+  if (!value.startsWith("/") || value.startsWith("//")) {
+    return "/admin/new";
+  }
+  if (!value.startsWith("/admin")) {
+    return "/admin/new";
+  }
+  return value;
+};
+
 export default function AdminLoginPage() {
   const router = useRouter();
   const [nextPath, setNextPath] = useState("/admin/new");
@@ -15,10 +28,7 @@ export default function AdminLoginPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const next = params.get("next");
-    if (next && next.startsWith("/")) {
-      setNextPath(next);
-    }
+    setNextPath(normalizeNextPath(params.get("next")));
   }, []);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -110,6 +120,9 @@ export default function AdminLoginPage() {
           </label>
           <div className="actions auth-login-actions">
             <button className="btn-primary auth-login-submit" type="submit" disabled={pending}>
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M2 8h10.5M9.75 4.75L13 8l-3.25 3.25" />
+              </svg>
               {pending ? "Проверка..." : "Войти"}
             </button>
           </div>
@@ -119,6 +132,9 @@ export default function AdminLoginPage() {
       </div>
 
       <Link href="/" className="btn-secondary auth-login-back">
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M6.25 3.75L2 8l4.25 4.25M2.5 8h11.5" />
+        </svg>
         Вернуться к блогу
       </Link>
     </section>

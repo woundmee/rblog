@@ -81,6 +81,7 @@ const initSchema = (db: SqliteDatabase) => {
     CREATE INDEX IF NOT EXISTS idx_post_views_post_id ON post_views(post_id);
     CREATE INDEX IF NOT EXISTS idx_post_views_viewed_at ON post_views(viewed_at DESC);
     CREATE INDEX IF NOT EXISTS idx_post_views_visitor_id ON post_views(visitor_id);
+    CREATE INDEX IF NOT EXISTS idx_post_views_post_visitor_viewed_at ON post_views(post_id, visitor_id, viewed_at DESC);
 
     CREATE TABLE IF NOT EXISTS post_reactions (
       post_id INTEGER NOT NULL,

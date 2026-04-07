@@ -1,3 +1,5 @@
+import dns from "node:dns/promises";
+import net from "node:net";
 import { unstable_noStore as noStore } from "next/cache";
 import { getDb } from "@/lib/db";
 
@@ -76,6 +78,70 @@ const getDomainTitle = (resourceUrl: string): string => {
   }
 };
 
+const isLocalHostname = (hostname: string): boolean => {
+  const value = hostname.toLowerCase();
+  return value === "localhost" || value.endsWith(".localhost") || value.endsWith(".local");
+};
+
+const isPrivateIpv4 = (address: string): boolean => {
+  const parts = address.split(".").map((part) => Number.parseInt(part, 10));
+  if (parts.length !== 4 || parts.some((part) => Number.isNaN(part) || part < 0 || part > 255)) {
+    return false;
+  }
+
+  const [a, b] = parts;
+  return (
+    a === 10 ||
+    a === 127 ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 168) ||
+    (a === 169 && b === 254) ||
+    (a === 100 && b >= 64 && b <= 127)
+  );
+};
+
+const isPrivateIpv6 = (address: string): boolean => {
+  const value = address.toLowerCase();
+  return value === "::1" || value.startsWith("fc") || value.startsWith("fd") || value.startsWith("fe80:");
+};
+
+const isPrivateIpAddress = (address: string): boolean => {
+  const version = net.isIP(address);
+  if (version === 4) {
+    return isPrivateIpv4(address);
+  }
+  if (version === 6) {
+    return isPrivateIpv6(address);
+  }
+  return false;
+};
+
+const assertPublicUrlHost = async (resourceUrl: string): Promise<void> => {
+  const hostname = new URL(resourceUrl).hostname;
+  if (isLocalHostname(hostname)) {
+    throw new Error("Forbidden resource host");
+  }
+
+  if (net.isIP(hostname) > 0) {
+    if (isPrivateIpAddress(hostname)) {
+      throw new Error("Forbidden resource host");
+    }
+    return;
+  }
+
+  try {
+    const records = await dns.lookup(hostname, { all: true, verbatim: true });
+    if (records.some((record) => isPrivateIpAddress(record.address))) {
+      throw new Error("Forbidden resource host");
+    }
+  } catch (error) {
+    if ((error as Error).message === "Forbidden resource host") {
+      throw error;
+    }
+    // DNS lookup errors are treated as "unknown host" and handled by fetch below.
+  }
+};
+
 const parseMetaTags = (html: string): Array<Record<string, string>> => {
   const metaTags = html.match(/<meta\s+[^>]*>/gi) ?? [];
   return metaTags.map((tag) => {
@@ -125,30 +191,77 @@ const toAbsoluteUrl = (value: string, baseUrl: string): string => {
   }
 };
 
-const fetchOpenGraphData = async (resourceUrl: string): Promise<OpenGraphData> => {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 7000);
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
+const MAX_REDIRECTS = 5;
 
-  try {
-    const response = await fetch(resourceUrl, {
-      signal: controller.signal,
-      redirect: "follow",
+const fetchSafeHtml = async (
+  resourceUrl: string,
+  signal: AbortSignal
+): Promise<{ html: string; finalUrl: string } | null> => {
+  let currentUrl = resourceUrl;
+
+  for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
+    await assertPublicUrlHost(currentUrl);
+
+    const response = await fetch(currentUrl, {
+      signal,
+      redirect: "manual",
       headers: {
         "user-agent": "rblog-resource-bot/1.0 (+https://rblog.local)",
         accept: "text/html,application/xhtml+xml"
       }
     });
 
+    if (REDIRECT_STATUSES.has(response.status)) {
+      const location = response.headers.get("location");
+      if (!location) {
+        return null;
+      }
+
+      const nextUrl = toAbsoluteUrl(location, currentUrl);
+      if (!nextUrl) {
+        return null;
+      }
+
+      const parsedNext = new URL(nextUrl);
+      if (!["http:", "https:"].includes(parsedNext.protocol)) {
+        throw new Error("Invalid resource URL");
+      }
+
+      currentUrl = parsedNext.toString();
+      continue;
+    }
+
     if (!response.ok) {
-      return { title: "", description: "", imageUrl: "" };
+      return null;
     }
 
     const contentType = response.headers.get("content-type") ?? "";
     if (!contentType.toLowerCase().includes("text/html")) {
-      return { title: "", description: "", imageUrl: "" };
+      return null;
     }
 
     const html = await response.text();
+    return {
+      html,
+      finalUrl: currentUrl
+    };
+  }
+
+  throw new Error("Too many redirects");
+};
+
+const fetchOpenGraphData = async (resourceUrl: string): Promise<OpenGraphData> => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 7000);
+
+  try {
+    const fetched = await fetchSafeHtml(resourceUrl, controller.signal);
+    if (!fetched) {
+      return { title: "", description: "", imageUrl: "" };
+    }
+
+    const html = fetched.html;
     const metaTags = parseMetaTags(html);
 
     const title =
@@ -159,14 +272,18 @@ const fetchOpenGraphData = async (resourceUrl: string): Promise<OpenGraphData> =
     const description = pickMetaContent(metaTags, ["og:description", "twitter:description", "description"]);
 
     const rawImage = pickMetaContent(metaTags, ["og:image", "twitter:image", "og:image:url"]);
-    const imageUrl = rawImage ? toAbsoluteUrl(rawImage, response.url || resourceUrl) : "";
+    const imageUrl = rawImage ? toAbsoluteUrl(rawImage, fetched.finalUrl || resourceUrl) : "";
 
     return {
       title,
       description,
       imageUrl
     };
-  } catch {
+  } catch (error) {
+    const message = (error as Error).message;
+    if (message === "Forbidden resource host" || message === "Invalid resource URL" || message === "Too many redirects") {
+      throw error;
+    }
     return { title: "", description: "", imageUrl: "" };
   } finally {
     clearTimeout(timeout);

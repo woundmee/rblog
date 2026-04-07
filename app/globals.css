@@ -58,6 +58,30 @@
     --danger-hover: #3a2128;
     --code-bg: #0f1115;
   }
+
+  .nav-favorites-btn {
+    border-color: var(--line);
+    background: var(--surface-soft);
+    color: var(--text-2);
+  }
+
+  .nav-favorites-btn:hover {
+    border-color: var(--line-strong);
+    background: var(--surface-strong);
+    color: var(--text-1);
+  }
+
+  .nav-favorites-btn.active {
+    border-color: var(--line-strong);
+    background: var(--surface-strong);
+    color: var(--text-1);
+  }
+
+  .nav-favorites-btn.active:hover {
+    border-color: var(--line-strong);
+    background: var(--line);
+    color: var(--text-1);
+  }
 }
 
 * {
@@ -421,19 +445,43 @@ a {
 
 .auth-login-submit {
   width: 100%;
-  text-align: center;
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.auth-login-submit svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .auth-login-back {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   text-align: center;
   width: auto;
   font-size: 0.82rem;
   padding: 7px 11px;
   margin-top: 54px;
+}
+
+.auth-login-back svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .content-stack {
@@ -540,9 +588,11 @@ a {
 }
 
 .resource-body {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
   padding: 12px;
+  height: 100%;
 }
 
 .resource-body h2 {
@@ -556,11 +606,29 @@ a {
   color: var(--text-2);
   font-size: 0.82rem;
   line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
-.resource-body span {
+.resource-link {
+  margin-top: auto;
+  padding-top: 8px;
   color: var(--text-3);
   font-size: 0.74rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: lowercase;
+}
+
+.resource-link svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex: 0 0 auto;
 }
 
 .resource-favorite-wrap {
@@ -1806,7 +1874,7 @@ a {
   }
 
   .search-shortcut {
-    gap: 3px;
+    display: none;
   }
 
   .search-shortcut-mod {

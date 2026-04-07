@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getPostById } from "@/lib/posts";
 import { recordPostView } from "@/lib/engagement";
+import { isTrustedMutationOrigin } from "@/lib/auth";
 import { createVisitorId, VISITOR_COOKIE_NAME } from "@/lib/visitor";
 
 export const runtime = "nodejs";
@@ -12,7 +13,11 @@ type RouteContext = {
 
 const parseId = (value: string): number => Number.parseInt(value, 10);
 
-export async function POST(_: Request, { params }: RouteContext) {
+export async function POST(request: Request, { params }: RouteContext) {
+  if (!isTrustedMutationOrigin(request)) {
+    return NextResponse.json({ error: "Forbidden origin" }, { status: 403 });
+  }
+
   const { id: rawId } = await params;
   const id = parseId(rawId);
   if (Number.isNaN(id)) {

@@ -4,12 +4,37 @@ import { Children, isValidElement, type ReactElement, type ReactNode, useEffect,
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import rehypeRaw from "rehype-raw";
+import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import { applyColorTokens } from "@/lib/markdown";
 
 type MarkdownRendererProps = {
   markdown: string;
   className?: string;
+};
+
+const sanitizeSchema = {
+  ...defaultSchema,
+  tagNames: [...(defaultSchema.tagNames ?? []), "span", "svg", "path", "title"],
+  attributes: {
+    ...defaultSchema.attributes,
+    span: [...(defaultSchema.attributes?.span ?? []), ["className", /^md-color-(blue|green|orange|red|purple)$/]],
+    svg: [
+      ...(defaultSchema.attributes?.svg ?? []),
+      ["className", "md-inline-icon"],
+      ["className", /^md-icon-color-(blue|green|orange|red|purple)$/],
+      "viewBox",
+      "role",
+      "aria-hidden",
+      "fill",
+      "stroke",
+      "stroke-width",
+      "stroke-linecap",
+      "stroke-linejoin"
+    ],
+    path: [...(defaultSchema.attributes?.path ?? []), "d"],
+    title: [...(defaultSchema.attributes?.title ?? [])]
+  }
 };
 
 const flattenText = (node: ReactNode): string => {
@@ -125,7 +150,7 @@ export default function MarkdownRenderer({ markdown, className }: MarkdownRender
     <div className={className}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw, rehypeHighlight]}
+        rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema], rehypeHighlight]}
         components={{
           pre: ({ children }) => <EnhancedPre>{children}</EnhancedPre>,
           blockquote: ({ children }) => {

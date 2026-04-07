@@ -12,6 +12,7 @@ type ReactionInput = {
 type ReactionRow = {
   emoji: string | null;
   rating: number | null;
+  reacted_at: string;
 };
 
 type EmojiCountRow = {
@@ -41,6 +42,9 @@ type DailyRow = {
   day: string;
   views: number;
 };
+
+const VIEW_DEDUP_WINDOW_MS = 1000 * 60 * 60 * 12;
+const REACTION_COOLDOWN_MS = 1000 * 3;
 
 const sanitizeEmoji = (value: string | null | undefined): ReactionEmoji | null => {
   if (!value) {
@@ -99,6 +103,17 @@ const getReactionSummary = (postId: number, visitorId?: string) => {
 
 export const recordPostView = async (postId: number, visitorId: string) => {
   const db = getDb();
+  const previous = db
+    .prepare("SELECT viewed_at FROM post_views WHERE post_id = ? AND visitor_id = ? ORDER BY viewed_at DESC LIMIT 1")
+    .get(postId, visitorId) as { viewed_at?: string } | undefined;
+
+  if (previous?.viewed_at) {
+    const previousTs = Date.parse(previous.viewed_at);
+    if (Number.isFinite(previousTs) && Date.now() - previousTs < VIEW_DEDUP_WINDOW_MS) {
+      return;
+    }
+  }
+
   db.prepare("INSERT INTO post_views (post_id, visitor_id, viewed_at) VALUES (?, ?, ?)").run(postId, visitorId, new Date().toISOString());
 };
 
@@ -111,10 +126,26 @@ export const upsertPostReaction = async (postId: number, visitorId: string, inpu
   const emoji = sanitizeEmoji(input.emoji);
   const rating = sanitizeRating(input.rating);
   const db = getDb();
+  const existing = db
+    .prepare("SELECT emoji, rating, reacted_at FROM post_reactions WHERE post_id = ? AND visitor_id = ? LIMIT 1")
+    .get(postId, visitorId) as ReactionRow | undefined;
 
   if (!emoji && !rating) {
     db.prepare("DELETE FROM post_reactions WHERE post_id = ? AND visitor_id = ?").run(postId, visitorId);
     return getReactionSummary(postId, visitorId);
+  }
+
+  if (existing) {
+    const existingEmoji = sanitizeEmoji(existing.emoji);
+    const existingRating = sanitizeRating(existing.rating);
+    if (existingEmoji === emoji && existingRating === rating) {
+      return getReactionSummary(postId, visitorId);
+    }
+
+    const reactedAtTs = Date.parse(existing.reacted_at);
+    if (Number.isFinite(reactedAtTs) && Date.now() - reactedAtTs < REACTION_COOLDOWN_MS) {
+      return getReactionSummary(postId, visitorId);
+    }
   }
 
   db.prepare(

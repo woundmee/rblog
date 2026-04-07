@@ -1,7 +1,7 @@
 import type { ResourceItem } from "@/lib/resources";
 import ResourceFavoriteButton from "@/components/resource-favorite-button";
 
-const truncateDescription = (value: string, limit = 300): string => {
+const truncateDescription = (value: string, limit = 150): string => {
   const normalized = value.trim();
   if (normalized.length <= limit) {
     return normalized;
@@ -22,7 +22,7 @@ type ResourceCardProps = {
 };
 
 export default function ResourceCard({ resource }: ResourceCardProps) {
-  const description = truncateDescription(resource.description, 300);
+  const description = truncateDescription(resource.description, 150);
   const hostLabel = getHostLabel(resource.url);
 
   return (
@@ -44,7 +44,12 @@ export default function ResourceCard({ resource }: ResourceCardProps) {
         <div className="resource-body">
           <h2>{resource.title}</h2>
           <p>{description || "Описание не указано."}</p>
-          <span>{hostLabel}</span>
+          <span className="resource-link">
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M6.25 4.75h5v5M10.95 5.05l-5.9 5.9" />
+            </svg>
+            {hostLabel}
+          </span>
         </div>
       </a>
 

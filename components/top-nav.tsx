@@ -142,7 +142,7 @@ export default function TopNav() {
             ))}
             <button
               type="button"
-              className={`center-nav-link nav-icon-btn${favoritesOpen ? " active" : ""}`}
+              className={`center-nav-link nav-icon-btn nav-favorites-btn${favoritesOpen ? " active" : ""}`}
               onClick={() => setFavoritesOpen((value) => !value)}
               aria-label="Избранное"
               title="Избранное"
