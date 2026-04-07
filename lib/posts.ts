@@ -14,6 +14,10 @@ type DbPostRow = {
   updated_at: string;
 };
 
+type DbCountRow = {
+  count: number | bigint;
+};
+
 export type PostMeta = {
   id: number;
   slug: string;
@@ -34,6 +38,14 @@ export type SidebarData = {
   recentPosts: Array<{ id: number; slug: string; title: string }>;
   categories: Array<{ name: string; count: number }>;
   tags: Array<{ name: string; count: number }>;
+};
+
+export type PaginatedPostMeta = {
+  items: PostMeta[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
 };
 
 type SqlRunResult = {
@@ -65,6 +77,8 @@ const parseTags = (raw: string): string[] => {
 
 const toTagJson = (tags: string[]): string => JSON.stringify(Array.from(new Set(tags.map((tag) => tag.trim().toLowerCase()).filter(Boolean))));
 
+const toNumber = (value: number | bigint): number => Number(value);
+
 const slugify = (value: string): string =>
   value
     .toLowerCase()
@@ -90,6 +104,35 @@ const mapPost = (row: DbPostRow): Post => ({
   ...mapMeta(row),
   content: row.content
 });
+
+const buildPostsWhereClause = (filters?: {
+  q?: string;
+  category?: string;
+  tag?: string;
+}): { whereSql: string; params: unknown[] } => {
+  const where: string[] = [];
+  const params: unknown[] = [];
+
+  if (filters?.category && filters.category.trim().length > 0) {
+    where.push("category = ?");
+    params.push(filters.category.trim().toLowerCase());
+  }
+
+  if (filters?.tag && filters.tag.trim().length > 0) {
+    where.push("tags LIKE ?");
+    params.push(`%"${filters.tag.trim().toLowerCase()}"%`);
+  }
+
+  if (filters?.q && filters.q.trim().length > 0) {
+    where.push("LOWER(title) LIKE ?");
+    params.push(`%${filters.q.trim().toLocaleLowerCase("ru-RU")}%`);
+  }
+
+  return {
+    whereSql: where.length > 0 ? `WHERE ${where.join(" AND ")}` : "",
+    params
+  };
+};
 
 const getUniqueSlug = (title: string, excludeId?: number): string => {
   const db = getDb();
@@ -122,35 +165,55 @@ export const getAllPostsMeta = async (filters?: {
 }): Promise<PostMeta[]> => {
   noStore();
   const db = getDb();
-
-  const normalizedQuery = filters?.q?.trim().toLocaleLowerCase("ru-RU") ?? "";
-  const where: string[] = [];
-  const params: unknown[] = [];
-
-  if (filters?.category && filters.category.trim().length > 0) {
-    where.push("category = ?");
-    params.push(filters.category.trim().toLowerCase());
-  }
-
-  if (filters?.tag && filters.tag.trim().length > 0) {
-    where.push("tags LIKE ?");
-    params.push(`%"${filters.tag.trim().toLowerCase()}"%`);
-  }
+  const { whereSql, params } = buildPostsWhereClause(filters);
 
   const query = `
     SELECT *
     FROM posts
-    ${where.length > 0 ? `WHERE ${where.join(" AND ")}` : ""}
+    ${whereSql}
     ORDER BY published_at DESC, id DESC
   `;
 
   const rows = db.prepare(query).all(...params) as DbPostRow[];
-  const filteredRows =
-    normalizedQuery.length > 0
-      ? rows.filter((row) => row.title.toLocaleLowerCase("ru-RU").includes(normalizedQuery))
-      : rows;
+  return rows.map(mapMeta);
+};
 
-  return filteredRows.map(mapMeta);
+export const getPostsMetaPage = async (options?: {
+  q?: string;
+  category?: string;
+  tag?: string;
+  page?: number;
+  pageSize?: number;
+}): Promise<PaginatedPostMeta> => {
+  noStore();
+  const db = getDb();
+  const page = Math.max(1, Math.floor(options?.page ?? 1));
+  const pageSize = Math.min(100, Math.max(1, Math.floor(options?.pageSize ?? 30)));
+  const offset = (page - 1) * pageSize;
+  const { whereSql, params } = buildPostsWhereClause(options);
+
+  const totalRow = db.prepare(`SELECT COUNT(*) as count FROM posts ${whereSql}`).get(...params) as DbCountRow;
+  const total = toNumber(totalRow.count);
+
+  const rows = db
+    .prepare(
+      `
+        SELECT *
+        FROM posts
+        ${whereSql}
+        ORDER BY published_at DESC, id DESC
+        LIMIT ? OFFSET ?
+      `
+    )
+    .all(...params, pageSize, offset) as DbPostRow[];
+
+  return {
+    items: rows.map(mapMeta),
+    total,
+    page,
+    pageSize,
+    hasMore: offset + rows.length < total
+  };
 };
 
 export const getPostBySlug = async (slug: string): Promise<Post | null> => {
@@ -180,6 +243,50 @@ export const getAdminPosts = async (): Promise<PostMeta[]> => {
   const db = getDb();
   const rows = db.prepare("SELECT * FROM posts ORDER BY published_at DESC, id DESC").all() as DbPostRow[];
   return rows.map(mapMeta);
+};
+
+export const getAdminPostsPage = async (options?: {
+  q?: string;
+  page?: number;
+  pageSize?: number;
+}): Promise<PaginatedPostMeta> => {
+  noStore();
+  const db = getDb();
+  const page = Math.max(1, Math.floor(options?.page ?? 1));
+  const pageSize = Math.min(100, Math.max(1, Math.floor(options?.pageSize ?? 20)));
+  const offset = (page - 1) * pageSize;
+  const normalizedQuery = options?.q?.trim().toLocaleLowerCase("ru-RU") ?? "";
+  const params: unknown[] = [];
+  const whereSql =
+    normalizedQuery.length > 0
+      ? (() => {
+          params.push(`%${normalizedQuery}%`);
+          return "WHERE LOWER(title) LIKE ?";
+        })()
+      : "";
+
+  const totalRow = db.prepare(`SELECT COUNT(*) as count FROM posts ${whereSql}`).get(...params) as DbCountRow;
+  const total = toNumber(totalRow.count);
+
+  const rows = db
+    .prepare(
+      `
+        SELECT *
+        FROM posts
+        ${whereSql}
+        ORDER BY published_at DESC, id DESC
+        LIMIT ? OFFSET ?
+      `
+    )
+    .all(...params, pageSize, offset) as DbPostRow[];
+
+  return {
+    items: rows.map(mapMeta),
+    total,
+    page,
+    pageSize,
+    hasMore: offset + rows.length < total
+  };
 };
 
 export const getSidebarData = async (): Promise<SidebarData> => {

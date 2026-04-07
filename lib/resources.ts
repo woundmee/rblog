@@ -13,6 +13,10 @@ type DbResourceRow = {
   updated_at: string;
 };
 
+type DbCountRow = {
+  count: number | bigint;
+};
+
 type ResourceInsertResult = {
   lastInsertRowid: number | bigint;
 };
@@ -37,6 +41,14 @@ export type ResourceItem = {
   updatedAt: string;
 };
 
+export type PaginatedResources = {
+  items: ResourceItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+};
+
 const toResourceItem = (row: DbResourceRow): ResourceItem => ({
   id: row.id,
   url: row.url,
@@ -46,6 +58,8 @@ const toResourceItem = (row: DbResourceRow): ResourceItem => ({
   createdAt: row.created_at,
   updatedAt: row.updated_at
 });
+
+const toNumber = (value: number | bigint): number => Number(value);
 
 const collapseWhitespace = (value: string): string => value.replace(/\s+/g, " ").trim();
 
@@ -294,13 +308,73 @@ export const getAllResources = async (filters?: { q?: string }): Promise<Resourc
   noStore();
   const db = getDb();
   const normalizedQuery = filters?.q?.trim().toLocaleLowerCase("ru-RU") ?? "";
-  const rows = db.prepare("SELECT * FROM resources ORDER BY updated_at DESC, id DESC").all() as DbResourceRow[];
-  const filteredRows =
+  const params: unknown[] = [];
+  const whereSql =
     normalizedQuery.length > 0
-      ? rows.filter((row) => row.title.toLocaleLowerCase("ru-RU").includes(normalizedQuery))
-      : rows;
-  return filteredRows.map(toResourceItem);
+      ? (() => {
+          params.push(`%${normalizedQuery}%`);
+          return "WHERE LOWER(title) LIKE ?";
+        })()
+      : "";
+  const rows = db
+    .prepare(`SELECT * FROM resources ${whereSql} ORDER BY updated_at DESC, id DESC`)
+    .all(...params) as DbResourceRow[];
+  return rows.map(toResourceItem);
 };
+
+export const getResourcesPage = async (options?: {
+  q?: string;
+  page?: number;
+  pageSize?: number;
+}): Promise<PaginatedResources> => {
+  noStore();
+  const db = getDb();
+  const page = Math.max(1, Math.floor(options?.page ?? 1));
+  const pageSize = Math.min(100, Math.max(1, Math.floor(options?.pageSize ?? 40)));
+  const offset = (page - 1) * pageSize;
+  const normalizedQuery = options?.q?.trim().toLocaleLowerCase("ru-RU") ?? "";
+  const params: unknown[] = [];
+  const whereSql =
+    normalizedQuery.length > 0
+      ? (() => {
+          params.push(`%${normalizedQuery}%`);
+          return "WHERE LOWER(title) LIKE ?";
+        })()
+      : "";
+
+  const totalRow = db.prepare(`SELECT COUNT(*) as count FROM resources ${whereSql}`).get(...params) as DbCountRow;
+  const total = toNumber(totalRow.count);
+  const rows = db
+    .prepare(
+      `
+        SELECT *
+        FROM resources
+        ${whereSql}
+        ORDER BY updated_at DESC, id DESC
+        LIMIT ? OFFSET ?
+      `
+    )
+    .all(...params, pageSize, offset) as DbResourceRow[];
+
+  return {
+    items: rows.map(toResourceItem),
+    total,
+    page,
+    pageSize,
+    hasMore: offset + rows.length < total
+  };
+};
+
+export const getAdminResourcesPage = async (options?: {
+  q?: string;
+  page?: number;
+  pageSize?: number;
+}): Promise<PaginatedResources> =>
+  getResourcesPage({
+    q: options?.q,
+    page: options?.page,
+    pageSize: options?.pageSize ?? 20
+  });
 
 export const getResourceById = async (id: number): Promise<ResourceItem | null> => {
   noStore();

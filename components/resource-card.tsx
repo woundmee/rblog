@@ -1,3 +1,5 @@
+"use client";
+
 import type { ResourceItem } from "@/lib/resources";
 import ResourceFavoriteButton from "@/components/resource-favorite-button";
 

@@ -1,15 +1,45 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isAdminRequest } from "@/lib/auth";
-import { getAllResources } from "@/lib/resources";
+import { getAdminResourcesPage } from "@/lib/resources";
 import ResourcesAdminPanel from "./resources-admin-panel";
 
-export default async function AdminResourcesPage() {
+type AdminResourcesPageProps = {
+  searchParams?: Promise<{
+    q?: string | string[];
+    page?: string | string[];
+  }>;
+};
+
+const normalizeQuery = (value: string | string[] | undefined): string => {
+  if (Array.isArray(value)) {
+    return value[0]?.trim() ?? "";
+  }
+  return value?.trim() ?? "";
+};
+
+const normalizePage = (value: string | string[] | undefined): number => {
+  const raw = Array.isArray(value) ? value[0] : value;
+  const parsed = Number.parseInt(raw ?? "", 10);
+  if (Number.isNaN(parsed) || parsed < 1) {
+    return 1;
+  }
+  return parsed;
+};
+
+export default async function AdminResourcesPage({ searchParams }: AdminResourcesPageProps) {
   if (!(await isAdminRequest())) {
     redirect("/admin/login?next=/admin/resources");
   }
 
-  const resources = await getAllResources();
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const q = normalizeQuery(resolvedSearchParams?.q);
+  const page = normalizePage(resolvedSearchParams?.page);
+  const resourcesPage = await getAdminResourcesPage({
+    q: q || undefined,
+    page,
+    pageSize: 20
+  });
 
   return (
     <div className="content-stack">
@@ -43,7 +73,13 @@ export default async function AdminResourcesPage() {
         </Link>
       </section>
 
-      <ResourcesAdminPanel initialResources={resources} />
+      <ResourcesAdminPanel
+        initialResources={resourcesPage.items}
+        searchQuery={q}
+        currentPage={resourcesPage.page}
+        totalResources={resourcesPage.total}
+        pageSize={resourcesPage.pageSize}
+      />
     </div>
   );
 }

@@ -33,9 +33,9 @@
   :root {
     color-scheme: dark;
     --bg: #090a0b;
-    --surface: #111215;
-    --surface-soft: #17191d;
-    --surface-strong: #1d2025;
+    --surface: #15181c;
+    --surface-soft: #1b1f24;
+    --surface-strong: #22272f;
 
     --text-1: #f3f4f6;
     --text-2: #aeb5c2;
@@ -56,7 +56,7 @@
     --danger-border: #7b3a47;
     --danger-text: #ff9cb0;
     --danger-hover: #3a2128;
-    --code-bg: #0f1115;
+    --code-bg: #14181d;
   }
 
   .nav-favorites-btn {
@@ -534,6 +534,21 @@ a {
 .post-list {
   display: grid;
   gap: 10px;
+}
+
+.list-progress-controls {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+}
+
+.list-load-more {
+  min-width: 140px;
+}
+
+.list-scroll-sentinel {
+  width: 100%;
+  height: 1px;
 }
 
 .resources-grid {
@@ -1637,6 +1652,43 @@ a {
   color: var(--text-2);
 }
 
+.admin-search-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.admin-search-form input {
+  min-width: min(100%, 280px);
+  flex: 1 1 280px;
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-soft);
+  color: var(--text-1);
+  font: inherit;
+  padding: 0 12px;
+  outline: none;
+}
+
+.admin-search-form input:focus {
+  border-color: var(--line-strong);
+}
+
+.admin-pagination {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.is-disabled {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
 .admin-posts {
   display: grid;
   gap: 10px;
@@ -1856,7 +1908,7 @@ a {
 
   .topbar {
     grid-template-columns: auto 1fr;
-    border-radius: 14px;
+    border-radius: 999px;
     padding: 10px;
     gap: 8px;
   }
@@ -1899,7 +1951,7 @@ a {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 8px;
     border: 1px solid var(--line);
-    border-radius: 14px;
+    border-radius: 999px;
     background: var(--surface);
     padding: 8px;
   }
@@ -1907,7 +1959,7 @@ a {
   .mobile-nav-link {
     min-height: 52px;
     border: 1px solid transparent;
-    border-radius: 10px;
+    border-radius: 999px;
     display: grid;
     justify-items: center;
     align-content: center;
@@ -1985,6 +2037,11 @@ a {
     grid-auto-flow: column;
     grid-auto-columns: minmax(0, max-content);
     justify-content: start;
+  }
+
+  .admin-pagination {
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
 
   .bookmark-overlay {

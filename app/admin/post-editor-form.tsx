@@ -87,6 +87,20 @@ export default function PostEditorForm({ mode, initialPost }: PostEditorFormProp
   };
 
   const onEditorKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    const element = textareaRef.current;
+    const hasSelection = element ? element.selectionStart !== element.selectionEnd : false;
+
+    if (event.code === "Backquote" && !event.metaKey && !event.ctrlKey && !event.altKey && hasSelection) {
+      event.preventDefault();
+      const selected = markdown.slice(element!.selectionStart, element!.selectionEnd);
+      if (event.shiftKey || selected.includes("\n")) {
+        wrapSelection("```ts\n", "\n```");
+      } else {
+        wrapSelection("`");
+      }
+      return;
+    }
+
     const meta = event.metaKey || event.ctrlKey;
     if (!meta) {
       return;
@@ -308,8 +322,9 @@ export default function PostEditorForm({ mode, initialPost }: PostEditorFormProp
               </div>
               <p className="hint">
                 Хоткеи: <code>Cmd/Ctrl+B</code>, <code>Cmd/Ctrl+I</code>, <code>Cmd/Ctrl+U</code>, <code>Cmd/Ctrl+~</code>,
-                <code>Cmd/Ctrl+E</code>, <code>Cmd/Ctrl+Z</code> (undo). Цвет: <code>{"{{blue|текст}}"}</code>. Иконка:
-                <code>{"{{icon:telegram}}"}</code> или <code>{"{{icon:telegram:blue}}"}</code>. Callout:{" "}
+                <code>Cmd/Ctrl+E</code>, <code>Cmd/Ctrl+Z</code> (undo). Выдели текст и нажми <code>`</code> для inline
+                code, либо <code>Shift+`</code> / multiline selection для блока кода. Цвет: <code>{"{{blue|текст}}"}</code>.
+                Иконка: <code>{"{{icon:telegram}}"}</code> или <code>{"{{icon:telegram:blue}}"}</code>. Callout:{" "}
                 <code>{"> [!INFO]\n> текст"}</code>.
               </p>
             </section>

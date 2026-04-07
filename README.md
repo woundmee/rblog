@@ -140,3 +140,13 @@ openssl rand -base64 48
 
 Таблица `posts` создаётся при первом запуске.  
 Если в БД нет записей, старые markdown-файлы из `content/posts/*.md` автоматически импортируются в SQLite один раз.
+
+
+## Для обновлений проект на удаленном сервере
+cd /var/www/rblog
+git pull
+export NVM_DIR="$HOME/.nvm"; . "$NVM_DIR/nvm.sh"; nvm use 20
+npm ci
+npm run build
+systemctl restart rblog
+

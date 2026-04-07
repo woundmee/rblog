@@ -1,6 +1,8 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { FormEvent, useState } from "react";
 import type { ResourceItem } from "@/lib/resources";
 
 type ResourceDraft = {
@@ -11,6 +13,10 @@ type ResourceDraft = {
 
 type ResourcesAdminPanelProps = {
   initialResources: ResourceItem[];
+  searchQuery: string;
+  currentPage: number;
+  totalResources: number;
+  pageSize: number;
 };
 
 const emptyDraft: ResourceDraft = {
@@ -39,8 +45,26 @@ const hostFromUrl = (value: string): string => {
   }
 };
 
-export default function ResourcesAdminPanel({ initialResources }: ResourcesAdminPanelProps) {
-  const [resources, setResources] = useState<ResourceItem[]>(initialResources);
+const makePageHref = (query: string, page: number): string => {
+  const params = new URLSearchParams();
+  if (query.trim().length > 0) {
+    params.set("q", query.trim());
+  }
+  if (page > 1) {
+    params.set("page", String(page));
+  }
+  const qs = params.toString();
+  return qs ? `/admin/resources?${qs}` : "/admin/resources";
+};
+
+export default function ResourcesAdminPanel({
+  initialResources,
+  searchQuery,
+  currentPage,
+  totalResources,
+  pageSize
+}: ResourcesAdminPanelProps) {
+  const router = useRouter();
   const [draft, setDraft] = useState<ResourceDraft>(emptyDraft);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingDraft, setEditingDraft] = useState<ResourceDraft>(emptyDraft);
@@ -49,11 +73,7 @@ export default function ResourcesAdminPanel({ initialResources }: ResourcesAdmin
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
-
-  const sortedResources = useMemo(
-    () => [...resources].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()),
-    [resources]
-  );
+  const totalPages = Math.max(1, Math.ceil(totalResources / pageSize));
 
   const showMessage = (text: string, error = false) => {
     setMessage(text);
@@ -83,9 +103,9 @@ export default function ResourcesAdminPanel({ initialResources }: ResourcesAdmin
         return;
       }
 
-      setResources((prev) => [payload.resource as ResourceItem, ...prev]);
       setDraft(emptyDraft);
       showMessage("Ресурс добавлен. Обложка подтянута автоматически из Open-Graph.");
+      router.refresh();
     } catch {
       showMessage("Сетевая ошибка при создании ресурса.", true);
     } finally {
@@ -129,10 +149,10 @@ export default function ResourcesAdminPanel({ initialResources }: ResourcesAdmin
         return;
       }
 
-      setResources((prev) => prev.map((item) => (item.id === id ? (payload.resource as ResourceItem) : item)));
       setEditingId(null);
       setEditingDraft(emptyDraft);
       showMessage("Ресурс обновлен.");
+      router.refresh();
     } catch {
       showMessage("Сетевая ошибка при обновлении ресурса.", true);
     } finally {
@@ -164,11 +184,11 @@ export default function ResourcesAdminPanel({ initialResources }: ResourcesAdmin
         return;
       }
 
-      setResources((prev) => prev.filter((item) => item.id !== id));
       if (editingId === id) {
         cancelEdit();
       }
       showMessage("Ресурс удален.");
+      router.refresh();
     } catch {
       showMessage("Сетевая ошибка при удалении ресурса.", true);
     } finally {
@@ -228,14 +248,26 @@ export default function ResourcesAdminPanel({ initialResources }: ResourcesAdmin
       <section className="panel admin-list">
         <header className="section-head section-head-compact admin-list-header">
           <h2>Список ресурсов</h2>
-          <p>Нажатие на карточку на публичной странице открывает внешнюю ссылку.</p>
+          <p>Найди карточку по заголовку, отредактируй или удали.</p>
         </header>
 
-        {sortedResources.length === 0 ? (
+        <form action="/admin/resources" method="get" className="admin-search-form">
+          <input type="search" name="q" placeholder="Поиск по заголовку..." defaultValue={searchQuery} />
+          <button type="submit" className="btn-secondary">
+            Найти
+          </button>
+          {searchQuery.trim().length > 0 && (
+            <Link href="/admin/resources" className="btn-secondary">
+              Сбросить
+            </Link>
+          )}
+        </form>
+
+        {initialResources.length === 0 ? (
           <p>Пока нет ресурсов.</p>
         ) : (
           <div className="admin-resources-list">
-            {sortedResources.map((resource) => {
+            {initialResources.map((resource) => {
               const isEditing = editingId === resource.id;
               return (
                 <article key={resource.id} className="admin-resource-row">
@@ -333,6 +365,30 @@ export default function ResourcesAdminPanel({ initialResources }: ResourcesAdmin
               );
             })}
           </div>
+        )}
+
+        {totalResources > pageSize && (
+          <nav className="admin-pagination" aria-label="Навигация по страницам ресурсов">
+            <Link
+              href={makePageHref(searchQuery, Math.max(1, currentPage - 1))}
+              className={`btn-secondary${currentPage <= 1 ? " is-disabled" : ""}`}
+              aria-disabled={currentPage <= 1}
+              tabIndex={currentPage <= 1 ? -1 : undefined}
+            >
+              Назад
+            </Link>
+            <span className="section-note">
+              Страница {currentPage} из {totalPages}
+            </span>
+            <Link
+              href={makePageHref(searchQuery, Math.min(totalPages, currentPage + 1))}
+              className={`btn-secondary${currentPage >= totalPages ? " is-disabled" : ""}`}
+              aria-disabled={currentPage >= totalPages}
+              tabIndex={currentPage >= totalPages ? -1 : undefined}
+            >
+              Вперед
+            </Link>
+          </nav>
         )}
       </section>
     </div>

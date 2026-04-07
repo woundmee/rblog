@@ -1,7 +1,7 @@
-import Link from "next/link";
-import { getAllPostsMeta } from "@/lib/posts";
-import { getAllResources } from "@/lib/resources";
-import ResourceCard from "@/components/resource-card";
+import PostsInfiniteList from "@/components/posts-infinite-list";
+import ResourcesInfiniteGrid from "@/components/resources-infinite-grid";
+import { getPostsMetaPage } from "@/lib/posts";
+import { getResourcesPage } from "@/lib/resources";
 
 type HomePageProps = {
   searchParams?: Promise<{
@@ -19,17 +19,31 @@ const normalizeQuery = (value: string | string[] | undefined): string => {
 export default async function HomePage({ searchParams }: HomePageProps) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const query = normalizeQuery(resolvedSearchParams?.q);
+  const postsPageSize = 30;
+  const resourcesPageSize = 40;
 
-  const [posts, resources] = await Promise.all([
-    getAllPostsMeta({
-      q: query
-    }),
-    getAllResources({
-      q: query
-    })
-  ]);
+  const postsPagePromise = getPostsMetaPage({
+    q: query,
+    page: 1,
+    pageSize: postsPageSize
+  });
+  const resourcesPagePromise = query
+    ? getResourcesPage({
+        q: query,
+        page: 1,
+        pageSize: resourcesPageSize
+      })
+    : Promise.resolve({
+        items: [],
+        total: 0,
+        page: 1,
+        pageSize: resourcesPageSize,
+        hasMore: false
+      });
 
-  const totalResults = posts.length + resources.length;
+  const [postsPage, resourcesPage] = await Promise.all([postsPagePromise, resourcesPagePromise]);
+
+  const totalResults = postsPage.total + resourcesPage.total;
 
   return (
     <section className="content-stack">
@@ -40,58 +54,44 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             {totalResults} результатов по запросу <strong>{query}</strong>
           </p>
         ) : (
-          <p>{posts.length} статей</p>
+          <p>{postsPage.total} статей</p>
         )}
       </header>
 
       {query && (
         <section className="section-head section-head-compact">
           <h2>Статьи</h2>
-          <p>{posts.length} найдено</p>
+          <p>{postsPage.total} найдено</p>
         </section>
       )}
 
-      <div className="post-list">
-        {posts.length === 0 ? (
-          <article className="panel empty-panel">
-            <p>
-              {query
-                ? "По статьям ничего не найдено."
-                : "Ничего не найдено. Попробуй изменить фильтры или опубликовать новую статью."}
-            </p>
-          </article>
-        ) : (
-          posts.map((post) => (
-            <Link key={post.id} href={`/posts/${post.slug}`} className="panel post-card">
-              <div className="post-card-meta">
-                <span>{new Date(post.date).toLocaleDateString("ru-RU")}</span>
-                <span>{post.readingTimeMinutes} мин чтения</span>
-              </div>
-              <h2>{post.title}</h2>
-              <p>{post.excerpt}</p>
-            </Link>
-          ))
-        )}
-      </div>
+      <PostsInfiniteList
+        initialItems={postsPage.items}
+        initialPage={postsPage.page}
+        pageSize={postsPage.pageSize}
+        initialHasMore={postsPage.hasMore}
+        query={query || undefined}
+        emptyMessage={
+          query
+            ? "По статьям ничего не найдено."
+            : "Ничего не найдено. Попробуй изменить фильтры или опубликовать новую статью."
+        }
+      />
 
       {query && (
         <>
           <section className="section-head section-head-compact">
             <h2>Ресурсы</h2>
-            <p>{resources.length} найдено</p>
+            <p>{resourcesPage.total} найдено</p>
           </section>
-
-          {resources.length === 0 ? (
-            <article className="panel empty-panel">
-              <p>По ресурсам ничего не найдено.</p>
-            </article>
-          ) : (
-            <div className="resources-grid">
-              {resources.map((resource) => (
-                <ResourceCard key={resource.id} resource={resource} />
-              ))}
-            </div>
-          )}
+          <ResourcesInfiniteGrid
+            initialItems={resourcesPage.items}
+            initialPage={resourcesPage.page}
+            pageSize={resourcesPage.pageSize}
+            initialHasMore={resourcesPage.hasMore}
+            query={query || undefined}
+            emptyMessage="По ресурсам ничего не найдено."
+          />
         </>
       )}
     </section>

@@ -6,7 +6,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Forbidden origin" }, { status: 403 });
   }
 
-  const response = NextResponse.redirect(new URL("/admin/login", request.url), { status: 303 });
+  const response = NextResponse.redirect(new URL("/", request.url), { status: 303 });
   response.cookies.set({
     name: ADMIN_COOKIE_NAME,
     value: "",
