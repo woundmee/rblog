@@ -1,0 +1,182 @@
+import { unstable_noStore as noStore } from "next/cache";
+import { getDb } from "@/lib/db";
+import { reactionEmojiOptions } from "@/lib/reaction-options";
+
+type ReactionEmoji = (typeof reactionEmojiOptions)[number];
+
+type ReactionInput = {
+  emoji?: string | null;
+  rating?: number | null;
+};
+
+type ReactionRow = {
+  emoji: string | null;
+  rating: number | null;
+};
+
+type EmojiCountRow = {
+  emoji: string;
+  count: number;
+};
+
+type RatingRow = {
+  average_rating: number | null;
+  total_ratings: number;
+};
+
+type AnalyticsTotalsRow = {
+  total_views: number;
+  unique_visitors: number;
+  total_reactions: number;
+  total_ratings: number;
+};
+
+type TopPostRow = {
+  id: number;
+  slug: string;
+  title: string;
+  views: number;
+};
+
+type DailyRow = {
+  day: string;
+  views: number;
+};
+
+const sanitizeEmoji = (value: string | null | undefined): ReactionEmoji | null => {
+  if (!value) {
+    return null;
+  }
+  return reactionEmojiOptions.includes(value as ReactionEmoji) ? (value as ReactionEmoji) : null;
+};
+
+const sanitizeRating = (value: number | null | undefined): number | null => {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return null;
+  }
+  const rounded = Math.round(value);
+  if (rounded < 1 || rounded > 5) {
+    return null;
+  }
+  return rounded;
+};
+
+const getReactionSummary = (postId: number, visitorId?: string) => {
+  const db = getDb();
+  const emojiRows = db
+    .prepare("SELECT emoji, COUNT(*) as count FROM post_reactions WHERE post_id = ? AND emoji IS NOT NULL GROUP BY emoji")
+    .all(postId) as EmojiCountRow[];
+
+  const ratingRow = db
+    .prepare(
+      "SELECT AVG(rating) as average_rating, COUNT(rating) as total_ratings FROM post_reactions WHERE post_id = ? AND rating IS NOT NULL"
+    )
+    .get(postId) as RatingRow;
+
+  const emojiCounts = reactionEmojiOptions.map((emoji) => {
+    const found = emojiRows.find((row) => row.emoji === emoji);
+    return { emoji, count: found?.count ?? 0 };
+  });
+
+  let userEmoji: ReactionEmoji | null = null;
+  let userRating: number | null = null;
+
+  if (visitorId) {
+    const userRow = db
+      .prepare("SELECT emoji, rating FROM post_reactions WHERE post_id = ? AND visitor_id = ? LIMIT 1")
+      .get(postId, visitorId) as ReactionRow | undefined;
+    userEmoji = sanitizeEmoji(userRow?.emoji);
+    userRating = sanitizeRating(userRow?.rating);
+  }
+
+  return {
+    emojiCounts,
+    averageRating: ratingRow.average_rating ? Number(ratingRow.average_rating.toFixed(1)) : null,
+    totalRatings: ratingRow.total_ratings ?? 0,
+    userEmoji,
+    userRating
+  };
+};
+
+export const recordPostView = async (postId: number, visitorId: string) => {
+  const db = getDb();
+  db.prepare("INSERT INTO post_views (post_id, visitor_id, viewed_at) VALUES (?, ?, ?)").run(postId, visitorId, new Date().toISOString());
+};
+
+export const getPostReactions = async (postId: number, visitorId?: string) => {
+  noStore();
+  return getReactionSummary(postId, visitorId);
+};
+
+export const upsertPostReaction = async (postId: number, visitorId: string, input: ReactionInput) => {
+  const emoji = sanitizeEmoji(input.emoji);
+  const rating = sanitizeRating(input.rating);
+  const db = getDb();
+
+  if (!emoji && !rating) {
+    db.prepare("DELETE FROM post_reactions WHERE post_id = ? AND visitor_id = ?").run(postId, visitorId);
+    return getReactionSummary(postId, visitorId);
+  }
+
+  db.prepare(
+    `
+      INSERT INTO post_reactions (post_id, visitor_id, emoji, rating, reacted_at)
+      VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT(post_id, visitor_id) DO UPDATE SET
+        emoji = excluded.emoji,
+        rating = excluded.rating,
+        reacted_at = excluded.reacted_at
+    `
+  ).run(postId, visitorId, emoji, rating, new Date().toISOString());
+
+  return getReactionSummary(postId, visitorId);
+};
+
+export const getAnalyticsOverview = async () => {
+  noStore();
+  const db = getDb();
+
+  const totals = db
+    .prepare(
+      `
+        SELECT
+          (SELECT COUNT(*) FROM post_views) as total_views,
+          (SELECT COUNT(DISTINCT visitor_id) FROM post_views) as unique_visitors,
+          (SELECT COUNT(*) FROM post_reactions WHERE emoji IS NOT NULL) as total_reactions,
+          (SELECT COUNT(*) FROM post_reactions WHERE rating IS NOT NULL) as total_ratings
+      `
+    )
+    .get() as AnalyticsTotalsRow;
+
+  const topPosts = db.prepare(
+    `
+      SELECT p.id, p.slug, p.title, COUNT(v.id) as views
+      FROM posts p
+      LEFT JOIN post_views v ON v.post_id = p.id
+      GROUP BY p.id
+      ORDER BY views DESC, p.published_at DESC
+      LIMIT 8
+    `
+  ).all() as TopPostRow[];
+
+  const daily = db.prepare(
+    `
+      SELECT substr(viewed_at, 1, 10) as day, COUNT(*) as views
+      FROM post_views
+      WHERE viewed_at >= datetime('now', '-7 day')
+      GROUP BY day
+      ORDER BY day ASC
+    `
+  ).all() as DailyRow[];
+
+  return {
+    totals: {
+      totalViews: totals.total_views ?? 0,
+      uniqueVisitors: totals.unique_visitors ?? 0,
+      totalReactions: totals.total_reactions ?? 0,
+      totalRatings: totals.total_ratings ?? 0
+    },
+    topPosts,
+    daily
+  };
+};
