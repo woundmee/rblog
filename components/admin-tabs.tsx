@@ -3,7 +3,7 @@ import Link from "next/link";
 export type AdminTabKey = "new" | "published" | "resources" | "about" | "analytics" | "ads";
 
 const adminTabs: Array<{ key: AdminTabKey; href: string; label: string }> = [
-  { key: "new", href: "/admin/new", label: "Статьи" },
+  { key: "new", href: "/admin/new", label: "Главная" },
   { key: "published", href: "/admin/published", label: "Опубликованные" },
   { key: "resources", href: "/admin/resources", label: "Ресурсы" },
   { key: "about", href: "/admin/about", label: "Обо мне" },

@@ -48,7 +48,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   return (
     <section className="content-stack">
       <header className="content-header">
-        <h1>{query ? "Поиск" : "Статьи"}</h1>
+        <h1>{query ? "Поиск" : "Главная"}</h1>
         {query ? (
           <p>
             {totalResults} результатов по запросу <strong>{query}</strong>
@@ -60,7 +60,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
       {query && (
         <section className="section-head section-head-compact">
-          <h2>Статьи</h2>
+          <h2>Главная</h2>
           <p>{postsPage.total} найдено</p>
         </section>
       )}

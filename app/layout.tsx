@@ -65,7 +65,7 @@ export default function RootLayout({
           <footer className="site-footer" aria-label="Footer">
             <p>© {new Date().getFullYear()} rblog</p>
             <nav className="site-footer-nav" aria-label="Footer links">
-              <Link href="/">Статьи</Link>
+              <Link href="/">Главная</Link>
               <Link href="/resources">Ресурсы</Link>
               <Link href="/about">Обо мне</Link>
             </nav>

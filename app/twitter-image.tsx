@@ -25,10 +25,10 @@ export default function TwitterImage() {
           fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace"
         }}
       >
-        <div style={{ display: "inline-flex", alignItems: "center", gap: "12px", fontSize: "32px", fontWeight: 700 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "32px", fontWeight: 700 }}>
           <span
             style={{
-              display: "inline-flex",
+              display: "flex",
               border: "1px solid #2d3139",
               borderRadius: "999px",
               padding: "6px 12px",
@@ -40,7 +40,7 @@ export default function TwitterImage() {
           rblog
         </div>
         <div style={{ fontSize: "56px", lineHeight: 1.05, fontWeight: 700 }}>Минималистичный IT-блог</div>
-        <div style={{ fontSize: "26px", color: "#aeb5c2" }}>Статьи, ресурсы, заметки и разборы</div>
+        <div style={{ fontSize: "26px", color: "#aeb5c2" }}>Главная, ресурсы, заметки и разборы</div>
       </div>
     ),
     {

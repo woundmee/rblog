@@ -216,6 +216,14 @@ a {
   text-underline-offset: 2px;
 }
 
+.page-shell:has(.admin-route) .ad-banner-wrap {
+  display: none;
+}
+
+.page-shell:has(.auth-login-shell) .site-footer {
+  display: none;
+}
+
 .topbar {
   width: 100%;
   border: 1px solid var(--line);
@@ -350,7 +358,7 @@ a {
   transform: translateY(-50%);
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   color: var(--text-3);
   pointer-events: none;
 }
@@ -362,20 +370,29 @@ a {
   color: var(--text-3);
   font-family: inherit;
   line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .search-shortcut-mod {
-  min-width: 20px;
-  padding: 3px 5px;
-  font-size: 0.8rem;
-  text-align: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  font-size: 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .search-shortcut-key {
   min-width: 16px;
-  padding: 2px 5px;
-  font-size: 0.69rem;
-  text-align: center;
+  height: 18px;
+  padding: 0 4px;
+  font-size: 0.64rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .mobile-bottom-nav {
@@ -1975,7 +1992,7 @@ a {
 
 @media (max-width: 900px) {
   body {
-    padding-bottom: 84px;
+    padding-bottom: 80px;
   }
 
   .page-shell {
@@ -2025,37 +2042,42 @@ a {
 
   .mobile-bottom-nav {
     position: fixed;
-    left: 10px;
-    right: 10px;
-    bottom: 10px;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
     z-index: 30;
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 8px;
+    gap: 6px;
     border: 1px solid var(--line);
     border-radius: 999px;
     background: var(--surface);
-    padding: 8px;
+    padding: 6px;
   }
 
   .mobile-nav-link {
-    min-height: 52px;
+    min-height: 48px;
     border: 1px solid transparent;
     border-radius: 999px;
     display: grid;
     justify-items: center;
     align-content: center;
-    gap: 4px;
+    gap: 3px;
     color: var(--text-2);
-    font-size: 0.72rem;
+    font-size: 0.68rem;
+    line-height: 1;
     background: transparent;
     font: inherit;
     cursor: pointer;
   }
 
+  .mobile-nav-link span {
+    white-space: nowrap;
+  }
+
   .mobile-nav-link svg {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     fill: none;
     stroke: currentColor;
     stroke-width: 1.7;

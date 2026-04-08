@@ -12,7 +12,7 @@ import {
 } from "@/lib/read-later";
 
 const navItems = [
-  { href: "/", label: "Статьи" },
+  { href: "/", label: "Главная" },
   { href: "/resources", label: "Ресурсы" },
   { href: "/about", label: "Обо мне" }
 ];
@@ -198,7 +198,7 @@ export default function TopNav() {
             <path d="M3 10.5L12 3l9 7.5" />
             <path d="M6.5 9.5V20h11V9.5" />
           </svg>
-          <span>Статьи</span>
+          <span>Главная</span>
         </Link>
         <Link href="/resources" className={`mobile-nav-link${isActive(pathname, "/resources") ? " active" : ""}`}>
           <svg viewBox="0 0 24 24" aria-hidden>

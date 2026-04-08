@@ -24,6 +24,8 @@ export async function generateMetadata({ params }: PostPageParams): Promise<Meta
   const title = post.title;
   const description = post.excerpt?.trim() || "Статья в блоге rblog.";
   const canonicalUrl = toAbsoluteUrl(`/posts/${post.slug}`);
+  const postOgImageUrl = toAbsoluteUrl(`/posts/${post.slug}/opengraph-image`);
+  const postTwitterImageUrl = toAbsoluteUrl(`/posts/${post.slug}/twitter-image`);
   const publishedDate = new Date(post.date);
   const publishedTime = Number.isNaN(publishedDate.getTime()) ? undefined : publishedDate.toISOString();
 
@@ -41,7 +43,7 @@ export async function generateMetadata({ params }: PostPageParams): Promise<Meta
       publishedTime,
       images: [
         {
-          url: "/opengraph-image",
+          url: postOgImageUrl,
           width: 1200,
           height: 630,
           alt: title
@@ -52,7 +54,7 @@ export async function generateMetadata({ params }: PostPageParams): Promise<Meta
       card: "summary_large_image",
       title,
       description,
-      images: ["/twitter-image"]
+      images: [postTwitterImageUrl]
     }
   };
 }
