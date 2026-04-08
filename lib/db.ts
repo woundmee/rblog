@@ -114,6 +114,26 @@ const initSchema = (db: SqliteDatabase) => {
 
     CREATE INDEX IF NOT EXISTS idx_resources_updated_at ON resources(updated_at DESC);
 
+    CREATE TABLE IF NOT EXISTS resource_clicks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      resource_id INTEGER NOT NULL,
+      visitor_id TEXT NOT NULL,
+      clicked_at TEXT NOT NULL,
+      utm_source TEXT,
+      utm_medium TEXT,
+      utm_campaign TEXT,
+      utm_term TEXT,
+      utm_content TEXT,
+      page_path TEXT NOT NULL DEFAULT '',
+      FOREIGN KEY(resource_id) REFERENCES resources(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_resource_clicks_resource_id ON resource_clicks(resource_id);
+    CREATE INDEX IF NOT EXISTS idx_resource_clicks_clicked_at ON resource_clicks(clicked_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_resource_clicks_utm_source ON resource_clicks(utm_source);
+    CREATE INDEX IF NOT EXISTS idx_resource_clicks_utm_medium ON resource_clicks(utm_medium);
+    CREATE INDEX IF NOT EXISTS idx_resource_clicks_utm_campaign ON resource_clicks(utm_campaign);
+
     -- Remove redundant indexes duplicated by unique/primary keys.
     DROP INDEX IF EXISTS idx_posts_slug;
     DROP INDEX IF EXISTS idx_posts_category;

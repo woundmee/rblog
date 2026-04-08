@@ -57,6 +57,64 @@ const estimateReadingTime = (text: string): number => {
 
 const toNumber = (value: number | bigint): number => Number(value);
 
+const commonStopWords = new Set([
+  "and",
+  "are",
+  "for",
+  "from",
+  "that",
+  "this",
+  "with",
+  "the",
+  "как",
+  "или",
+  "для",
+  "что",
+  "это",
+  "при",
+  "над",
+  "под",
+  "про",
+  "без",
+  "все",
+  "всё",
+  "его",
+  "она",
+  "они",
+  "так",
+  "если",
+  "где",
+  "когда",
+  "чтобы"
+]);
+
+const tokenize = (text: string): Set<string> => {
+  const normalized = text
+    .toLocaleLowerCase("ru-RU")
+    .replace(/[^a-zа-яё0-9\s-]+/gi, " ")
+    .replace(/-/g, " ");
+
+  const tokens = normalized
+    .split(/\s+/)
+    .map((token) => token.trim())
+    .filter((token) => token.length >= 3 && !commonStopWords.has(token));
+
+  return new Set(tokens);
+};
+
+const overlapCount = (left: Set<string>, right: Set<string>): number => {
+  if (left.size === 0 || right.size === 0) {
+    return 0;
+  }
+  let count = 0;
+  for (const token of left) {
+    if (right.has(token)) {
+      count += 1;
+    }
+  }
+  return count;
+};
+
 const slugify = (value: string): string =>
   value
     .toLowerCase()
@@ -314,4 +372,61 @@ export const deletePost = async (id: number): Promise<boolean> => {
   const db = getDb();
   const result = db.prepare("DELETE FROM posts WHERE id = ?").run(id) as SqlChangesResult;
   return result.changes > 0;
+};
+
+export const getRelatedPosts = async (postId: number, limit = 4): Promise<PostMeta[]> => {
+  noStore();
+  const db = getDb();
+  const row = db.prepare("SELECT * FROM posts WHERE id = ? LIMIT 1").get(postId) as DbPostRow | undefined;
+  if (!row) {
+    return [];
+  }
+
+  const targetTitleTokens = tokenize(row.title);
+  const targetExcerptTokens = tokenize(row.excerpt);
+  const targetContentTokens = tokenize(row.content);
+  const targetAllTokens = tokenize(`${row.title} ${row.excerpt} ${row.content}`);
+
+  const candidates = db
+    .prepare(
+      `
+        SELECT *
+        FROM posts
+        WHERE id <> ?
+        ORDER BY published_at DESC, id DESC
+        LIMIT 120
+      `
+    )
+    .all(postId) as DbPostRow[];
+
+  const scored = candidates
+    .map((candidate) => {
+      const titleTokens = tokenize(candidate.title);
+      const excerptTokens = tokenize(candidate.excerpt);
+      const contentTokens = tokenize(candidate.content);
+      const allTokens = tokenize(`${candidate.title} ${candidate.excerpt} ${candidate.content}`);
+
+      const score =
+        overlapCount(titleTokens, targetTitleTokens) * 5 +
+        overlapCount(excerptTokens, targetExcerptTokens) * 3 +
+        overlapCount(contentTokens, targetContentTokens) +
+        overlapCount(allTokens, targetAllTokens);
+
+      return {
+        candidate,
+        score
+      };
+    })
+    .sort((a, b) => b.score - a.score || b.candidate.published_at.localeCompare(a.candidate.published_at));
+
+  const related = scored
+    .filter((item) => item.score > 0)
+    .slice(0, limit)
+    .map((item) => mapMeta(item.candidate));
+
+  if (related.length > 0) {
+    return related;
+  }
+
+  return candidates.slice(0, limit).map(mapMeta);
 };

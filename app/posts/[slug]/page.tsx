@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getPostBySlug } from "@/lib/posts";
+import { getPostBySlug, getRelatedPosts } from "@/lib/posts";
 import { toAbsoluteUrl } from "@/lib/site-url";
 import MarkdownRenderer from "@/components/markdown-renderer";
 import ReadLaterButton from "@/components/read-later-button";
 import PostEngagement from "@/components/post-engagement";
+import ReadingProgress from "@/components/reading-progress";
 
 type PostPageParams = {
   params: Promise<{ slug: string }>;
@@ -69,8 +70,11 @@ export default async function PostPage({
     notFound();
   }
 
+  const related = await getRelatedPosts(post.id, 4);
+
   return (
     <article className="panel article-view">
+      <ReadingProgress />
       <header className="article-header">
         <div className="article-header-actions">
           <Link href="/" className="article-back-link">
@@ -95,6 +99,24 @@ export default async function PostPage({
       </header>
       <MarkdownRenderer markdown={post.content} className="markdown-body" />
       <PostEngagement postId={post.id} />
+      {related.length > 0 && (
+        <section className="article-related">
+          <header className="section-head section-head-compact">
+            <h2>Похожие статьи</h2>
+          </header>
+          <div className="article-related-grid">
+            {related.map((item) => (
+              <Link key={item.id} href={`/posts/${item.slug}`} className="article-related-card">
+                <h3>{item.title}</h3>
+                <p>{item.excerpt}</p>
+                <span>
+                  {new Date(item.date).toLocaleDateString("ru-RU")} · {item.readingTimeMinutes} мин
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
     </article>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, KeyboardEvent, useRef, useState } from "react";
+import { FormEvent, KeyboardEvent, useMemo, useRef, useState } from "react";
 import IconPicker from "@/components/icon-picker";
 import MarkdownRenderer from "@/components/markdown-renderer";
 
@@ -15,6 +15,27 @@ const colorOptions = [
 ] as const;
 
 type ColorId = (typeof colorOptions)[number]["id"];
+
+type SlashCommand = {
+  id: string;
+  label: string;
+  hint: string;
+  snippet: string;
+};
+
+const slashCommands: SlashCommand[] = [
+  { id: "h2", label: "H2", hint: "Заголовок раздела", snippet: "## Заголовок раздела\n" },
+  { id: "h3", label: "H3", hint: "Подраздел", snippet: "### Подраздел\n" },
+  { id: "code", label: "Code", hint: "Блок кода TypeScript", snippet: "```ts\nconst value = true;\n```\n" },
+  { id: "table", label: "Table", hint: "Markdown-таблица", snippet: "| Колонка 1 | Колонка 2 |\n| --- | --- |\n| Значение | Значение |\n" },
+  { id: "quote", label: "Quote", hint: "Цитата", snippet: "> Цитата\n" },
+  { id: "info", label: "Info", hint: "Информационный callout", snippet: "> [!INFO]\n> Текст уведомления\n" },
+  { id: "warn", label: "Warn", hint: "Предупреждение", snippet: "> [!WARN]\n> Текст предупреждения\n" },
+  { id: "danger", label: "Danger", hint: "Критичный callout", snippet: "> [!DANGER]\n> Текст важного предупреждения\n" },
+  { id: "link", label: "Link", hint: "Markdown-ссылка", snippet: "[Текст ссылки](https://example.com)\n" },
+  { id: "hr", label: "Divider", hint: "Горизонтальная линия", snippet: "---\n" },
+  { id: "todo", label: "Checklist", hint: "Чеклист", snippet: "- [ ] Первый пункт\n- [ ] Второй пункт\n" }
+];
 
 export type EditorInitialPost = {
   id: number;
@@ -43,7 +64,37 @@ export default function PostEditorForm({ mode, initialPost }: PostEditorFormProp
   const [isError, setIsError] = useState(false);
   const [showFormatting, setShowFormatting] = useState(false);
   const [showIcons, setShowIcons] = useState(false);
+  const [slash, setSlash] = useState<{
+    start: number;
+    end: number;
+    query: string;
+    selected: number;
+  } | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const visibleSlashCommands = useMemo(() => {
+    if (!slash) {
+      return [];
+    }
+    const query = slash.query.toLocaleLowerCase("ru-RU");
+    return slashCommands
+      .filter((command) => query.length === 0 || command.id.includes(query) || command.label.toLocaleLowerCase("ru-RU").includes(query))
+      .slice(0, 8);
+  }, [slash]);
+
+  const detectSlash = (value: string, caretPosition: number) => {
+    const beforeCaret = value.slice(0, caretPosition);
+    const match = beforeCaret.match(/(^|\s)\/([a-z0-9_-]*)$/i);
+    if (!match) {
+      return null;
+    }
+    const tokenLength = 1 + (match[2]?.length ?? 0);
+    return {
+      start: caretPosition - tokenLength,
+      end: caretPosition,
+      query: (match[2] ?? "").toLocaleLowerCase("ru-RU")
+    };
+  };
 
   const wrapSelection = (prefix: string, suffix?: string) => {
     const element = textareaRef.current;
@@ -86,9 +137,69 @@ export default function PostEditorForm({ mode, initialPost }: PostEditorFormProp
     wrapSelection(`{{${color}|`, "}}");
   };
 
+  const applySlashCommand = (command: SlashCommand) => {
+    if (!slash) {
+      return;
+    }
+    const element = textareaRef.current;
+    if (!element) {
+      return;
+    }
+
+    const next = `${markdown.slice(0, slash.start)}${command.snippet}${markdown.slice(slash.end)}`;
+    const caret = slash.start + command.snippet.length;
+    setMarkdown(next);
+    setSlash(null);
+
+    requestAnimationFrame(() => {
+      element.focus();
+      element.setSelectionRange(caret, caret);
+    });
+  };
+
   const onEditorKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     const element = textareaRef.current;
     const hasSelection = element ? element.selectionStart !== element.selectionEnd : false;
+
+    if (slash && visibleSlashCommands.length > 0) {
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        setSlash((current) =>
+          current
+            ? {
+                ...current,
+                selected: (current.selected + 1) % visibleSlashCommands.length
+              }
+            : current
+        );
+        return;
+      }
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        setSlash((current) =>
+          current
+            ? {
+                ...current,
+                selected: (current.selected - 1 + visibleSlashCommands.length) % visibleSlashCommands.length
+              }
+            : current
+        );
+        return;
+      }
+      if (event.key === "Enter" || event.key === "Tab") {
+        event.preventDefault();
+        const command = visibleSlashCommands[Math.min(slash.selected, visibleSlashCommands.length - 1)];
+        if (command) {
+          applySlashCommand(command);
+        }
+        return;
+      }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setSlash(null);
+        return;
+      }
+    }
 
     if (event.code === "Backquote" && !event.metaKey && !event.ctrlKey && !event.altKey && hasSelection) {
       event.preventDefault();
@@ -158,10 +269,12 @@ export default function PostEditorForm({ mode, initialPost }: PostEditorFormProp
     setExcerpt("");
     setDate("");
     setMarkdown(defaultTemplate);
+    setSlash(null);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setSlash(null);
     setPending(true);
     setMessage("");
     setIsError(false);
@@ -325,7 +438,7 @@ export default function PostEditorForm({ mode, initialPost }: PostEditorFormProp
                 <code>Cmd/Ctrl+E</code>, <code>Cmd/Ctrl+Z</code> (undo). Выдели текст и нажми <code>`</code> для inline
                 code, либо <code>Shift+`</code> / multiline selection для блока кода. Цвет: <code>{"{{blue|текст}}"}</code>.
                 Иконка: <code>{"{{icon:telegram}}"}</code> или <code>{"{{icon:telegram:blue}}"}</code>. Callout:{" "}
-                <code>{"> [!INFO]\n> текст"}</code>.
+                <code>{"> [!INFO]\n> текст"}</code>. Slash-команды: начни строку с <code>/</code> и выбери шаблон.
               </p>
             </section>
           )}
@@ -336,14 +449,47 @@ export default function PostEditorForm({ mode, initialPost }: PostEditorFormProp
 
           <label className="field">
             <span>Markdown</span>
-            <textarea
-              ref={textareaRef}
-              value={markdown}
-              onChange={(event) => setMarkdown(event.target.value)}
-              onKeyDown={onEditorKeyDown}
-              required
-            />
-          </label>
+              <textarea
+                ref={textareaRef}
+                value={markdown}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  const caret = event.target.selectionStart ?? value.length;
+                  setMarkdown(value);
+                  const detected = detectSlash(value, caret);
+                  if (!detected) {
+                    setSlash(null);
+                    return;
+                  }
+                  setSlash((current) => ({
+                    ...detected,
+                    selected: current && current.query === detected.query ? current.selected : 0
+                  }));
+                }}
+                onKeyDown={onEditorKeyDown}
+                onBlur={() => {
+                  window.setTimeout(() => setSlash(null), 120);
+                }}
+                required
+              />
+            </label>
+
+          {slash && visibleSlashCommands.length > 0 && (
+            <div className="slash-menu panel" role="listbox" aria-label="Slash команды">
+              {visibleSlashCommands.map((command, index) => (
+                <button
+                  key={command.id}
+                  type="button"
+                  className={`slash-item${index === slash.selected ? " active" : ""}`}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => applySlashCommand(command)}
+                >
+                  <strong>/{command.id}</strong>
+                  <span>{command.hint}</span>
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="actions">
             <button className="btn-primary" type="submit" disabled={pending}>

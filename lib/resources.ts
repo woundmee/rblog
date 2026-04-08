@@ -25,6 +25,33 @@ type ResourceChangesResult = {
   changes: number;
 };
 
+type ResourceClickTotalsRow = {
+  total_clicks: number | bigint;
+  unique_visitors: number | bigint;
+  with_utm: number | bigint;
+};
+
+type ResourceClicksTopRow = {
+  id: number;
+  title: string;
+  url: string;
+  clicks: number | bigint;
+};
+
+type ResourceUtmBucketRow = {
+  value: string | null;
+  clicks: number | bigint;
+};
+
+type ResourceDailyClickRow = {
+  day: string;
+  clicks: number | bigint;
+};
+
+type ResourceLatestClickRow = {
+  clicked_at: string;
+};
+
 type OpenGraphData = {
   title: string;
   description: string;
@@ -49,6 +76,42 @@ export type PaginatedResources = {
   hasMore: boolean;
 };
 
+export type ResourceClickTrackInput = {
+  resourceId: number;
+  visitorId: string;
+  pagePath?: string;
+  utmSource?: string | null;
+  utmMedium?: string | null;
+  utmCampaign?: string | null;
+  utmTerm?: string | null;
+  utmContent?: string | null;
+};
+
+type ResourceAnalyticsBucket = {
+  value: string;
+  clicks: number;
+};
+
+export type ResourceClickAnalytics = {
+  totals: {
+    totalClicks: number;
+    uniqueVisitors: number;
+    withUtm: number;
+  };
+  topResources: Array<{
+    id: number;
+    title: string;
+    url: string;
+    clicks: number;
+  }>;
+  utm: {
+    sources: ResourceAnalyticsBucket[];
+    mediums: ResourceAnalyticsBucket[];
+    campaigns: ResourceAnalyticsBucket[];
+  };
+  daily: Array<{ day: string; clicks: number }>;
+};
+
 const toResourceItem = (row: DbResourceRow): ResourceItem => ({
   id: row.id,
   url: row.url,
@@ -62,6 +125,24 @@ const toResourceItem = (row: DbResourceRow): ResourceItem => ({
 const toNumber = (value: number | bigint): number => Number(value);
 
 const collapseWhitespace = (value: string): string => value.replace(/\s+/g, " ").trim();
+
+const normalizeShortText = (value: string | null | undefined, maxLength: number): string | null => {
+  const normalized = collapseWhitespace(value ?? "");
+  if (!normalized) {
+    return null;
+  }
+  return normalized.slice(0, maxLength);
+};
+
+const normalizeUtmValue = (value: string | null | undefined): string | null => normalizeShortText(value, 120)?.toLowerCase() ?? null;
+
+const normalizePagePath = (value: string | null | undefined): string => {
+  const normalized = collapseWhitespace(value ?? "");
+  if (!normalized) {
+    return "";
+  }
+  return normalized.slice(0, 260);
+};
 
 const decodeHtmlEntities = (value: string): string =>
   value
@@ -381,6 +462,149 @@ export const getResourceById = async (id: number): Promise<ResourceItem | null> 
   const db = getDb();
   const row = db.prepare("SELECT * FROM resources WHERE id = ? LIMIT 1").get(id) as DbResourceRow | undefined;
   return row ? toResourceItem(row) : null;
+};
+
+export const trackResourceClick = async (input: ResourceClickTrackInput): Promise<void> => {
+  const db = getDb();
+  const visitorId = normalizeShortText(input.visitorId, 80);
+  if (!visitorId) {
+    return;
+  }
+
+  const latest = db
+    .prepare("SELECT clicked_at FROM resource_clicks WHERE resource_id = ? AND visitor_id = ? ORDER BY clicked_at DESC LIMIT 1")
+    .get(input.resourceId, visitorId) as ResourceLatestClickRow | undefined;
+
+  if (latest?.clicked_at) {
+    const latestTs = Date.parse(latest.clicked_at);
+    if (Number.isFinite(latestTs) && Date.now() - latestTs < 1500) {
+      return;
+    }
+  }
+
+  db.prepare(
+    `
+      INSERT INTO resource_clicks (
+        resource_id,
+        visitor_id,
+        clicked_at,
+        utm_source,
+        utm_medium,
+        utm_campaign,
+        utm_term,
+        utm_content,
+        page_path
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `
+  ).run(
+    input.resourceId,
+    visitorId,
+    new Date().toISOString(),
+    normalizeUtmValue(input.utmSource),
+    normalizeUtmValue(input.utmMedium),
+    normalizeUtmValue(input.utmCampaign),
+    normalizeUtmValue(input.utmTerm),
+    normalizeUtmValue(input.utmContent),
+    normalizePagePath(input.pagePath)
+  );
+};
+
+const fetchUtmBuckets = (field: "utm_source" | "utm_medium" | "utm_campaign"): ResourceAnalyticsBucket[] => {
+  const db = getDb();
+  const rows = db
+    .prepare(
+      `
+        SELECT ${field} as value, COUNT(*) as clicks
+        FROM resource_clicks
+        WHERE ${field} IS NOT NULL AND TRIM(${field}) <> ''
+        GROUP BY ${field}
+        ORDER BY clicks DESC, value ASC
+        LIMIT 8
+      `
+    )
+    .all() as ResourceUtmBucketRow[];
+
+  return rows.map((row) => ({
+    value: row.value ?? "",
+    clicks: toNumber(row.clicks)
+  }));
+};
+
+export const getResourceClickAnalytics = async (): Promise<ResourceClickAnalytics> => {
+  noStore();
+  const db = getDb();
+
+  const totals = db
+    .prepare(
+      `
+        SELECT
+          COUNT(*) as total_clicks,
+          COUNT(DISTINCT visitor_id) as unique_visitors,
+          SUM(
+            CASE
+              WHEN
+                (utm_source IS NOT NULL AND TRIM(utm_source) <> '')
+                OR (utm_medium IS NOT NULL AND TRIM(utm_medium) <> '')
+                OR (utm_campaign IS NOT NULL AND TRIM(utm_campaign) <> '')
+                OR (utm_term IS NOT NULL AND TRIM(utm_term) <> '')
+                OR (utm_content IS NOT NULL AND TRIM(utm_content) <> '')
+              THEN 1
+              ELSE 0
+            END
+          ) as with_utm
+        FROM resource_clicks
+      `
+    )
+    .get() as ResourceClickTotalsRow;
+
+  const topResourcesRows = db
+    .prepare(
+      `
+        SELECT r.id, r.title, r.url, COUNT(c.id) as clicks
+        FROM resource_clicks c
+        JOIN resources r ON r.id = c.resource_id
+        GROUP BY r.id
+        ORDER BY clicks DESC, r.updated_at DESC
+        LIMIT 8
+      `
+    )
+    .all() as ResourceClicksTopRow[];
+
+  const dailyRows = db
+    .prepare(
+      `
+        SELECT substr(clicked_at, 1, 10) as day, COUNT(*) as clicks
+        FROM resource_clicks
+        WHERE clicked_at >= datetime('now', '-14 day')
+        GROUP BY day
+        ORDER BY day ASC
+      `
+    )
+    .all() as ResourceDailyClickRow[];
+
+  return {
+    totals: {
+      totalClicks: toNumber(totals.total_clicks ?? 0),
+      uniqueVisitors: toNumber(totals.unique_visitors ?? 0),
+      withUtm: toNumber(totals.with_utm ?? 0)
+    },
+    topResources: topResourcesRows.map((row) => ({
+      id: row.id,
+      title: row.title,
+      url: row.url,
+      clicks: toNumber(row.clicks)
+    })),
+    utm: {
+      sources: fetchUtmBuckets("utm_source"),
+      mediums: fetchUtmBuckets("utm_medium"),
+      campaigns: fetchUtmBuckets("utm_campaign")
+    },
+    daily: dailyRows.map((row) => ({
+      day: row.day,
+      clicks: toNumber(row.clicks)
+    }))
+  };
 };
 
 export const createResource = async (input: {
