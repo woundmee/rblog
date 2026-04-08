@@ -807,7 +807,7 @@ a {
 
 .reading-progress-bar {
   height: 100%;
-  background: #4f8dff;
+  background: color-mix(in srgb, var(--text-3) 72%, transparent);
   border-radius: 0 999px 999px 0;
   transition: width 90ms linear;
 }
@@ -893,7 +893,7 @@ a {
 }
 
 .article-related {
-  margin-top: 20px;
+  margin-top: 32px;
   border-top: 1px solid var(--line);
   padding-top: 14px;
 }
@@ -1033,26 +1033,109 @@ a {
   padding: 10px 12px;
 }
 
-.md-callout strong {
-  display: block;
-  margin-bottom: 5px;
+.md-callout-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 7px;
   font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.md-callout-badge {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 0.72rem;
+  line-height: 1;
+  padding: 3px 7px;
+}
+
+.md-callout-title {
+  color: var(--text-1);
+  font-weight: 700;
+}
+
+.md-callout-body {
+  display: block;
+  color: var(--text-2);
+}
+
+.md-callout-body > :first-child {
+  margin-top: 0;
+}
+
+.md-callout-body > :last-child {
+  margin-bottom: 0;
+}
+
+.md-callout-body p {
+  margin: 0.42em 0;
 }
 
 .md-callout-info {
+  border-color: color-mix(in srgb, #4f8dff 30%, var(--line));
   border-left-color: #4f8dff;
+  background: color-mix(in srgb, #4f8dff 8%, var(--surface-soft));
 }
 
 .md-callout-warn {
+  border-color: color-mix(in srgb, #d88434 30%, var(--line));
   border-left-color: #d88434;
+  background: color-mix(in srgb, #d88434 8%, var(--surface-soft));
 }
 
 .md-callout-danger {
+  border-color: color-mix(in srgb, #d95978 30%, var(--line));
   border-left-color: #d95978;
+  background: color-mix(in srgb, #d95978 8%, var(--surface-soft));
 }
 
 .md-callout-callout {
+  border-color: color-mix(in srgb, #9363d6 30%, var(--line));
   border-left-color: #9363d6;
+  background: color-mix(in srgb, #9363d6 8%, var(--surface-soft));
+}
+
+.md-callout-info .md-callout-head {
+  color: color-mix(in srgb, #4f8dff 70%, var(--text-1));
+}
+
+.md-callout-info .md-callout-badge {
+  border-color: color-mix(in srgb, #4f8dff 34%, var(--line));
+  background: color-mix(in srgb, #4f8dff 12%, var(--surface));
+  color: color-mix(in srgb, #4f8dff 72%, var(--text-1));
+}
+
+.md-callout-warn .md-callout-head {
+  color: color-mix(in srgb, #d88434 70%, var(--text-1));
+}
+
+.md-callout-warn .md-callout-badge {
+  border-color: color-mix(in srgb, #d88434 34%, var(--line));
+  background: color-mix(in srgb, #d88434 12%, var(--surface));
+  color: color-mix(in srgb, #d88434 72%, var(--text-1));
+}
+
+.md-callout-danger .md-callout-head {
+  color: color-mix(in srgb, #d95978 70%, var(--text-1));
+}
+
+.md-callout-danger .md-callout-badge {
+  border-color: color-mix(in srgb, #d95978 34%, var(--line));
+  background: color-mix(in srgb, #d95978 12%, var(--surface));
+  color: color-mix(in srgb, #d95978 72%, var(--text-1));
+}
+
+.md-callout-callout .md-callout-head {
+  color: color-mix(in srgb, #9363d6 70%, var(--text-1));
+}
+
+.md-callout-callout .md-callout-badge {
+  border-color: color-mix(in srgb, #9363d6 34%, var(--line));
+  background: color-mix(in srgb, #9363d6 12%, var(--surface));
+  color: color-mix(in srgb, #9363d6 72%, var(--text-1));
 }
 
 .md-code-block {

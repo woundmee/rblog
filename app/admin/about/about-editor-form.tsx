@@ -72,7 +72,16 @@ export default function AboutEditorForm({
     });
   };
 
-  const insertSnippet = (snippet: string) => {
+  const normalizeBlockSnippet = (source: string, start: number, end: number, snippet: string): string => {
+    const before = source.slice(0, start);
+    const after = source.slice(end);
+    const base = snippet.replace(/^\n+/, "").replace(/\n+$/, "\n");
+    const prefix = start > 0 && !before.endsWith("\n") ? "\n" : "";
+    const suffix = after.length > 0 && !after.startsWith("\n") ? "\n" : "";
+    return `${prefix}${base}${suffix}`;
+  };
+
+  const insertSnippet = (snippet: string, asBlock = false) => {
     const element = getActiveRef();
     if (!element) {
       return;
@@ -80,12 +89,13 @@ export default function AboutEditorForm({
     const source = getActiveValue();
     const start = element.selectionStart;
     const end = element.selectionEnd;
-    const next = `${source.slice(0, start)}${snippet}${source.slice(end)}`;
+    const inserted = asBlock ? normalizeBlockSnippet(source, start, end, snippet) : snippet;
+    const next = `${source.slice(0, start)}${inserted}${source.slice(end)}`;
     setActiveValue(next);
 
     requestAnimationFrame(() => {
       element.focus();
-      const caret = start + snippet.length;
+      const caret = start + inserted.length;
       element.setSelectionRange(caret, caret);
     });
   };
@@ -234,30 +244,30 @@ export default function AboutEditorForm({
                 <button
                   type="button"
                   className="color-btn"
-                  onClick={() => insertSnippet("| Колонка 1 | Колонка 2 |\n| --- | --- |\n| Значение | Значение |\n")}
+                  onClick={() => insertSnippet("| Колонка 1 | Колонка 2 |\n| --- | --- |\n| Значение | Значение |\n", true)}
                 >
                   Table
                 </button>
-                <button type="button" className="color-btn" onClick={() => insertSnippet("> Цитата\n")}>
+                <button type="button" className="color-btn" onClick={() => insertSnippet("> Цитата\n", true)}>
                   Quote
                 </button>
-                <button type="button" className="color-btn" onClick={() => insertSnippet("> [!INFO]\n> Текст уведомления\n")}>
+                <button type="button" className="color-btn" onClick={() => insertSnippet("> [!INFO] Заголовок\n>\n> Текст уведомления\n", true)}>
                   Info
                 </button>
-                <button type="button" className="color-btn" onClick={() => insertSnippet("> [!WARN]\n> Текст предупреждения\n")}>
+                <button type="button" className="color-btn" onClick={() => insertSnippet("> [!WARN] Заголовок\n>\n> Текст предупреждения\n", true)}>
                   Warn
                 </button>
                 <button
                   type="button"
                   className="color-btn"
-                  onClick={() => insertSnippet("> [!DANGER]\n> Текст важного предупреждения\n")}
+                  onClick={() => insertSnippet("> [!DANGER] Заголовок\n>\n> Текст важного предупреждения\n", true)}
                 >
                   Danger
                 </button>
                 <button
                   type="button"
                   className="color-btn"
-                  onClick={() => insertSnippet("> [!CALLOUT]\n> Дополнительная заметка\n")}
+                  onClick={() => insertSnippet("> [!CALLOUT] Заголовок\n>\n> Дополнительная заметка\n", true)}
                 >
                   Callout
                 </button>
@@ -277,7 +287,8 @@ export default function AboutEditorForm({
               <p className="hint">
                 Работает для активного поля (по фокусу). Хоткеи: <code>Cmd/Ctrl+B</code>, <code>Cmd/Ctrl+I</code>,{" "}
                 <code>Cmd/Ctrl+U</code>, <code>Cmd/Ctrl+~</code>, <code>Cmd/Ctrl+K</code>, <code>Cmd/Ctrl+Z</code>.
-                Цвет: <code>{"{{green|текст}}"}</code>, иконка: <code>{"{{icon:github}}"}</code>.
+                Цвет: <code>{"{{green|текст}}"}</code>, иконка: <code>{"{{icon:github}}"}</code>. Callout:{" "}
+                <code>{"> [!WARN] Заголовок\n>\n> текст"}</code>.
               </p>
             </section>
           )}

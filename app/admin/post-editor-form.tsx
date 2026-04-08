@@ -21,20 +21,22 @@ type SlashCommand = {
   label: string;
   hint: string;
   snippet: string;
+  block?: boolean;
 };
 
 const slashCommands: SlashCommand[] = [
-  { id: "h2", label: "H2", hint: "Заголовок раздела", snippet: "## Заголовок раздела\n" },
-  { id: "h3", label: "H3", hint: "Подраздел", snippet: "### Подраздел\n" },
-  { id: "code", label: "Code", hint: "Блок кода TypeScript", snippet: "```ts\nconst value = true;\n```\n" },
-  { id: "table", label: "Table", hint: "Markdown-таблица", snippet: "| Колонка 1 | Колонка 2 |\n| --- | --- |\n| Значение | Значение |\n" },
-  { id: "quote", label: "Quote", hint: "Цитата", snippet: "> Цитата\n" },
-  { id: "info", label: "Info", hint: "Информационный callout", snippet: "> [!INFO]\n> Текст уведомления\n" },
-  { id: "warn", label: "Warn", hint: "Предупреждение", snippet: "> [!WARN]\n> Текст предупреждения\n" },
-  { id: "danger", label: "Danger", hint: "Критичный callout", snippet: "> [!DANGER]\n> Текст важного предупреждения\n" },
+  { id: "h2", label: "H2", hint: "Заголовок раздела", snippet: "## Заголовок раздела\n", block: true },
+  { id: "h3", label: "H3", hint: "Подраздел", snippet: "### Подраздел\n", block: true },
+  { id: "code", label: "Code", hint: "Блок кода TypeScript", snippet: "```ts\nconst value = true;\n```\n", block: true },
+  { id: "table", label: "Table", hint: "Markdown-таблица", snippet: "| Колонка 1 | Колонка 2 |\n| --- | --- |\n| Значение | Значение |\n", block: true },
+  { id: "quote", label: "Quote", hint: "Цитата", snippet: "> Цитата\n", block: true },
+  { id: "qoute", label: "Quote", hint: "Цитата (alias)", snippet: "> Цитата\n", block: true },
+  { id: "info", label: "Info", hint: "Информационный callout", snippet: "> [!INFO] Заголовок\n>\n> Текст уведомления\n", block: true },
+  { id: "warn", label: "Warn", hint: "Предупреждение", snippet: "> [!WARN] Заголовок\n>\n> Текст предупреждения\n", block: true },
+  { id: "danger", label: "Danger", hint: "Критичный callout", snippet: "> [!DANGER] Заголовок\n>\n> Текст важного предупреждения\n", block: true },
   { id: "link", label: "Link", hint: "Markdown-ссылка", snippet: "[Текст ссылки](https://example.com)\n" },
-  { id: "hr", label: "Divider", hint: "Горизонтальная линия", snippet: "---\n" },
-  { id: "todo", label: "Checklist", hint: "Чеклист", snippet: "- [ ] Первый пункт\n- [ ] Второй пункт\n" }
+  { id: "hr", label: "Divider", hint: "Горизонтальная линия", snippet: "---\n", block: true },
+  { id: "todo", label: "Checklist", hint: "Чеклист", snippet: "- [ ] Первый пункт\n- [ ] Второй пункт\n", block: true }
 ];
 
 export type EditorInitialPost = {
@@ -116,19 +118,29 @@ export default function PostEditorForm({ mode, initialPost }: PostEditorFormProp
     });
   };
 
-  const insertSnippet = (snippet: string) => {
+  const normalizeBlockSnippet = (source: string, start: number, end: number, snippet: string): string => {
+    const before = source.slice(0, start);
+    const after = source.slice(end);
+    const base = snippet.replace(/^\n+/, "").replace(/\n+$/, "\n");
+    const prefix = start > 0 && !before.endsWith("\n") ? "\n" : "";
+    const suffix = after.length > 0 && !after.startsWith("\n") ? "\n" : "";
+    return `${prefix}${base}${suffix}`;
+  };
+
+  const insertSnippet = (snippet: string, asBlock = false) => {
     const element = textareaRef.current;
     if (!element) {
       return;
     }
     const start = element.selectionStart;
     const end = element.selectionEnd;
-    const next = `${markdown.slice(0, start)}${snippet}${markdown.slice(end)}`;
+    const inserted = asBlock ? normalizeBlockSnippet(markdown, start, end, snippet) : snippet;
+    const next = `${markdown.slice(0, start)}${inserted}${markdown.slice(end)}`;
     setMarkdown(next);
 
     requestAnimationFrame(() => {
       element.focus();
-      const caret = start + snippet.length;
+      const caret = start + inserted.length;
       element.setSelectionRange(caret, caret);
     });
   };
@@ -146,8 +158,11 @@ export default function PostEditorForm({ mode, initialPost }: PostEditorFormProp
       return;
     }
 
-    const next = `${markdown.slice(0, slash.start)}${command.snippet}${markdown.slice(slash.end)}`;
-    const caret = slash.start + command.snippet.length;
+    const inserted = command.block
+      ? normalizeBlockSnippet(markdown, slash.start, slash.end, command.snippet)
+      : command.snippet;
+    const next = `${markdown.slice(0, slash.start)}${inserted}${markdown.slice(slash.end)}`;
+    const caret = slash.start + inserted.length;
     setMarkdown(next);
     setSlash(null);
 
@@ -390,33 +405,33 @@ export default function PostEditorForm({ mode, initialPost }: PostEditorFormProp
                 <button type="button" className="color-btn" onClick={() => wrapSelection("[", "](https://example.com)")}>
                   Link
                 </button>
-                <button
+                  <button
                   type="button"
                   className="color-btn"
-                  onClick={() => insertSnippet("| Колонка 1 | Колонка 2 |\n| --- | --- |\n| Значение | Значение |\n")}
+                  onClick={() => insertSnippet("| Колонка 1 | Колонка 2 |\n| --- | --- |\n| Значение | Значение |\n", true)}
                 >
                   Table
                 </button>
-                <button type="button" className="color-btn" onClick={() => insertSnippet("> Цитата\n")}>
+                <button type="button" className="color-btn" onClick={() => insertSnippet("> Цитата\n", true)}>
                   Quote
                 </button>
-                <button type="button" className="color-btn" onClick={() => insertSnippet("> [!INFO]\n> Текст уведомления\n")}>
+                <button type="button" className="color-btn" onClick={() => insertSnippet("> [!INFO] Заголовок\n>\n> Текст уведомления\n", true)}>
                   Info
                 </button>
-                <button type="button" className="color-btn" onClick={() => insertSnippet("> [!WARN]\n> Текст предупреждения\n")}>
+                <button type="button" className="color-btn" onClick={() => insertSnippet("> [!WARN] Заголовок\n>\n> Текст предупреждения\n", true)}>
                   Warn
                 </button>
                 <button
                   type="button"
                   className="color-btn"
-                  onClick={() => insertSnippet("> [!DANGER]\n> Текст важного предупреждения\n")}
+                  onClick={() => insertSnippet("> [!DANGER] Заголовок\n>\n> Текст важного предупреждения\n", true)}
                 >
                   Danger
                 </button>
                 <button
                   type="button"
                   className="color-btn"
-                  onClick={() => insertSnippet("> [!CALLOUT]\n> Дополнительная заметка\n")}
+                  onClick={() => insertSnippet("> [!CALLOUT] Заголовок\n>\n> Дополнительная заметка\n", true)}
                 >
                   Callout
                 </button>
@@ -438,7 +453,7 @@ export default function PostEditorForm({ mode, initialPost }: PostEditorFormProp
                 <code>Cmd/Ctrl+E</code>, <code>Cmd/Ctrl+Z</code> (undo). Выдели текст и нажми <code>`</code> для inline
                 code, либо <code>Shift+`</code> / multiline selection для блока кода. Цвет: <code>{"{{blue|текст}}"}</code>.
                 Иконка: <code>{"{{icon:telegram}}"}</code> или <code>{"{{icon:telegram:blue}}"}</code>. Callout:{" "}
-                <code>{"> [!INFO]\n> текст"}</code>. Slash-команды: начни строку с <code>/</code> и выбери шаблон.
+                <code>{"> [!INFO] Заголовок\n>\n> текст"}</code>. Slash-команды: начни строку с <code>/</code> и выбери шаблон.
               </p>
             </section>
           )}

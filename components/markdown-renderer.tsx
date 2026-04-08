@@ -1,6 +1,6 @@
 "use client";
 
-import { Children, isValidElement, type ReactElement, type ReactNode, useEffect, useMemo, useState } from "react";
+import { Children, createElement, isValidElement, type ReactElement, type ReactNode, useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import rehypeRaw from "rehype-raw";
@@ -65,29 +65,43 @@ const flattenText = (node: ReactNode): string => {
 };
 
 const detectCallout = (children: ReactNode) => {
-  const items = Children.toArray(children);
+  const items = Children.toArray(children).filter(
+    (item) => !(typeof item === "string" && item.trim().length === 0)
+  );
   const first = items[0];
   if (!isValidElement<{ children?: ReactNode }>(first) || first.type !== "p") {
     return null;
   }
   const text = flattenText(first.props.children).trim();
-  const match = text.match(/^\[!(INFO|WARN|DANGER|CALLOUT)\]\s*(.*)$/i);
+  const match = text.match(/^\s*\[!([A-Z]+)\]\s*([\s\S]*)$/i);
   if (!match) {
     return null;
   }
 
-  const type = match[1].toLowerCase();
-  const firstContent = match[2].trim();
-  const body: ReactNode[] = [];
-
-  if (firstContent.length > 0) {
-    body.push(<p key="first">{firstContent}</p>);
+  const rawType = match[1].toUpperCase();
+  const type =
+    rawType === "INFO" || rawType === "NOTE" || rawType === "TIP"
+      ? "info"
+      : rawType === "WARN" || rawType === "WARNING" || rawType === "CAUTION"
+        ? "warn"
+        : rawType === "DANGER" || rawType === "ERROR"
+          ? "danger"
+          : rawType === "CALLOUT"
+            ? "callout"
+            : null;
+  if (!type) {
+    return null;
   }
+  const rawInline = match[2].replace(/\r/g, "");
+  const inlineLines = rawInline.split("\n");
+  const inlineTitle = (inlineLines.shift() ?? "").trim();
+  const inlineBodyText = inlineLines.join("\n").trim();
+  const body: ReactNode[] = inlineBodyText.length > 0 ? [createElement("p", { key: "callout-inline-body" }, inlineBodyText)] : [];
   body.push(...items.slice(1));
 
   return {
     type,
-    title:
+    badge:
       type === "info"
         ? "Info"
         : type === "warn"
@@ -95,6 +109,7 @@ const detectCallout = (children: ReactNode) => {
           : type === "danger"
             ? "Danger"
             : "Callout",
+    title: inlineTitle.length > 0 ? inlineTitle : null,
     body
   };
 };
@@ -184,8 +199,11 @@ export default function MarkdownRenderer({ markdown, className }: MarkdownRender
             }
             return (
               <aside className={`md-callout md-callout-${callout.type}`}>
-                <strong>{callout.title}</strong>
-                <div>{callout.body}</div>
+                <strong className="md-callout-head">
+                  <span className="md-callout-badge">{callout.badge}</span>
+                  {callout.title ? <span className="md-callout-title">{callout.title}</span> : null}
+                </strong>
+                {callout.body.length > 0 ? <div className="md-callout-body">{callout.body}</div> : null}
               </aside>
             );
           }
