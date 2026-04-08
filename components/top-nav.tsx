@@ -130,6 +130,18 @@ export default function TopNav() {
             </form>
           </div>
 
+          <Link
+            href="/about"
+            className={`mobile-top-about${isActive(pathname, "/about") ? " active" : ""}`}
+            aria-label="Обо мне"
+            title="Обо мне"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden>
+              <circle cx="12" cy="8" r="3.2" />
+              <path d="M5 20c1.6-3.6 4-5.4 7-5.4s5.4 1.8 7 5.4" />
+            </svg>
+          </Link>
+
           <nav className="center-nav topbar-links" aria-label="Основные разделы">
             {navItems.map((item) => (
               <Link
@@ -207,13 +219,6 @@ export default function TopNav() {
             <path d="M4 18h16" />
           </svg>
           <span>Ресурсы</span>
-        </Link>
-        <Link href="/about" className={`mobile-nav-link${isActive(pathname, "/about") ? " active" : ""}`}>
-          <svg viewBox="0 0 24 24" aria-hidden>
-            <circle cx="12" cy="8" r="3.2" />
-            <path d="M5 20c1.6-3.6 4-5.4 7-5.4s5.4 1.8 7 5.4" />
-          </svg>
-          <span>Обо мне</span>
         </Link>
         <Link href="/favorites" className={`mobile-nav-link${isActive(pathname, "/favorites") ? " active" : ""}`}>
           <svg viewBox="0 0 24 24" aria-hidden>

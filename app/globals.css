@@ -325,6 +325,10 @@ a {
   justify-content: flex-end;
 }
 
+.mobile-top-about {
+  display: none;
+}
+
 .top-search {
   width: min(100%, 360px);
   position: relative;
@@ -2006,7 +2010,7 @@ a {
   }
 
   .topbar {
-    grid-template-columns: auto 1fr;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     border-radius: 999px;
     padding: 10px;
     gap: 8px;
@@ -2022,6 +2026,43 @@ a {
 
   .top-search {
     width: 100%;
+  }
+
+  .mobile-top-about {
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface-soft);
+    color: var(--text-2);
+    display: inline-grid;
+    place-items: center;
+  }
+
+  .mobile-top-about svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .mobile-top-about:hover {
+    border-color: var(--line-strong);
+    color: var(--text-1);
+  }
+
+  .mobile-top-about.active {
+    background: var(--active-bg);
+    border-color: var(--active-bg);
+    color: var(--active-text);
+  }
+
+  .mobile-top-about.active:hover {
+    background: var(--active-hover);
+    border-color: var(--active-hover);
   }
 
   .search-shortcut {
@@ -2047,7 +2088,7 @@ a {
     bottom: 8px;
     z-index: 30;
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 6px;
     border: 1px solid var(--line);
     border-radius: 999px;
