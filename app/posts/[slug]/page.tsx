@@ -7,6 +7,8 @@ import MarkdownRenderer from "@/components/markdown-renderer";
 import ReadLaterButton from "@/components/read-later-button";
 import PostEngagement from "@/components/post-engagement";
 import ReadingProgress from "@/components/reading-progress";
+import ArticleToc from "@/components/article-toc";
+import { extractMarkdownHeadings } from "@/lib/markdown-headings";
 
 type PostPageParams = {
   params: Promise<{ slug: string }>;
@@ -71,6 +73,7 @@ export default async function PostPage({
   }
 
   const related = await getRelatedPosts(post.id, 4);
+  const headings = extractMarkdownHeadings(post.content);
 
   return (
     <article className="panel article-view">
@@ -92,11 +95,31 @@ export default async function PostPage({
           />
         </div>
         <div className="article-meta">
-          <span>{new Date(post.date).toLocaleDateString("ru-RU")}</span>
-          <span>{post.readingTimeMinutes} мин чтения</span>
+          <span className="article-meta-item" title="Дата публикации">
+            <svg viewBox="0 0 24 24" aria-hidden>
+              <rect x="4" y="5" width="16" height="15" rx="2" />
+              <path d="M8 3v4M16 3v4M4 10h16" />
+            </svg>
+            <span>{new Date(post.date).toLocaleDateString("ru-RU")}</span>
+          </span>
+          <span className="article-meta-item" title="Время чтения">
+            <svg viewBox="0 0 24 24" aria-hidden>
+              <circle cx="12" cy="12" r="8" />
+              <path d="M12 8v4l3 2" />
+            </svg>
+            <span>{post.readingTimeMinutes} мин</span>
+          </span>
+          <span className="article-meta-item" title="Уникальные просмотры">
+            <svg viewBox="0 0 24 24" aria-hidden>
+              <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z" />
+              <circle cx="12" cy="12" r="2.5" />
+            </svg>
+            <span>{post.uniqueViews}</span>
+          </span>
         </div>
         <h1>{post.title}</h1>
       </header>
+      <ArticleToc items={headings} />
       <MarkdownRenderer markdown={post.content} className="markdown-body" />
       <PostEngagement postId={post.id} />
       {related.length > 0 && (

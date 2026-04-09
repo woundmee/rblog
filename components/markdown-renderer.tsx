@@ -7,6 +7,7 @@ import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import { applyColorTokens } from "@/lib/markdown";
+import { buildHeadingId } from "@/lib/markdown-headings";
 
 type MarkdownRendererProps = {
   markdown: string;
@@ -29,7 +30,7 @@ const normalizeLinkHref = (value: string): string => {
 
 const sanitizeSchema = {
   ...defaultSchema,
-  tagNames: [...(defaultSchema.tagNames ?? []), "span", "svg", "path", "title"],
+  tagNames: [...(defaultSchema.tagNames ?? []), "span", "svg", "path", "title", "u"],
   attributes: {
     ...defaultSchema.attributes,
     span: [...(defaultSchema.attributes?.span ?? []), ["className", /^md-color-(blue|green|orange|red|purple)$/]],
@@ -59,6 +60,9 @@ const flattenText = (node: ReactNode): string => {
     return node.map(flattenText).join("");
   }
   if (isValidElement<{ children?: ReactNode }>(node)) {
+    if (typeof node.type === "string" && (node.type === "svg" || node.type === "path" || node.type === "title")) {
+      return "";
+    }
     return flattenText(node.props.children);
   }
   return "";
@@ -174,6 +178,14 @@ export default function MarkdownRenderer({ markdown, className }: MarkdownRender
     .replace(/```js\b/gi, "```javascript")
     .replace(/```ts\b/gi, "```typescript");
   const transformed = applyColorTokens(normalized);
+  const createHeading = (tag: "h1" | "h2" | "h3" | "h4" | "h5" | "h6") => {
+    return ({ children, node }: { children?: ReactNode; node?: { position?: { start?: { line?: number } } } }) => {
+      const plainText = flattenText(children).replace(/\s+/g, " ").trim();
+      const text = plainText.length > 0 ? plainText : "section";
+      const id = buildHeadingId(text, node?.position?.start?.line);
+      return createElement(tag, { id }, children);
+    };
+  };
 
   return (
     <div className={className}>
@@ -191,6 +203,12 @@ export default function MarkdownRenderer({ markdown, className }: MarkdownRender
               </a>
             );
           },
+          h1: createHeading("h1"),
+          h2: createHeading("h2"),
+          h3: createHeading("h3"),
+          h4: createHeading("h4"),
+          h5: createHeading("h5"),
+          h6: createHeading("h6"),
           pre: ({ children }) => <EnhancedPre>{children}</EnhancedPre>,
           blockquote: ({ children }) => {
             const callout = detectCallout(children);

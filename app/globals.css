@@ -775,6 +775,23 @@ a {
   font-size: 0.8rem;
 }
 
+.post-card-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.post-card-meta-item svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.9;
+}
+
 .post-card h2 {
   margin: 0;
   font-size: 1.08rem;
@@ -892,6 +909,95 @@ a {
   font-size: 0.82rem;
 }
 
+.article-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.article-meta-item svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.9;
+}
+
+.article-toc {
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-soft);
+  padding: 10px 12px;
+}
+
+.article-toc h2 {
+  margin: 0;
+  font-size: 0.84rem;
+  color: var(--text-2);
+}
+
+.article-toc ol {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 4px;
+}
+
+.article-toc li {
+  min-height: 20px;
+}
+
+.article-toc a {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  color: var(--text-2);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  text-decoration: none;
+}
+
+.article-toc .toc-prefix {
+  color: var(--text-3);
+  min-width: 8px;
+  user-select: none;
+}
+
+.article-toc a:hover {
+  color: var(--text-1);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.article-toc .toc-level-1 {
+  padding-left: 0;
+}
+
+.article-toc .toc-level-2 {
+  padding-left: 10px;
+}
+
+.article-toc .toc-level-3 {
+  padding-left: 20px;
+}
+
+.article-toc .toc-level-4 {
+  padding-left: 30px;
+}
+
+.article-toc .toc-level-5 {
+  padding-left: 40px;
+}
+
+.article-toc .toc-level-6 {
+  padding-left: 50px;
+}
+
 .article-related {
   margin-top: 32px;
   border-top: 1px solid var(--line);
@@ -942,10 +1048,13 @@ a {
 .markdown-body h1,
 .markdown-body h2,
 .markdown-body h3,
-.markdown-body h4 {
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
   color: var(--text-1);
   margin-top: 1.6em;
   margin-bottom: 0.45em;
+  scroll-margin-top: 92px;
 }
 
 .markdown-body p,
@@ -956,6 +1065,11 @@ a {
 
 .markdown-body a {
   color: #4f8dff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.markdown-body u {
   text-decoration: underline;
   text-underline-offset: 3px;
 }

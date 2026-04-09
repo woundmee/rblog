@@ -10,6 +10,7 @@ type DbPostRow = {
   published_at: string;
   created_at: string;
   updated_at: string;
+  unique_views?: number | bigint | null;
 };
 
 type DbCountRow = {
@@ -23,6 +24,7 @@ export type PostMeta = {
   excerpt: string;
   date: string;
   readingTimeMinutes: number;
+  uniqueViews: number;
   updatedAt: string;
 };
 
@@ -56,6 +58,19 @@ const estimateReadingTime = (text: string): number => {
 };
 
 const toNumber = (value: number | bigint): number => Number(value);
+
+const postsSelectWithViews = `
+  SELECT p.*,
+    COALESCE(
+      (
+        SELECT COUNT(DISTINCT v.visitor_id)
+        FROM post_views v
+        WHERE v.post_id = p.id
+      ),
+      0
+    ) AS unique_views
+  FROM posts p
+`;
 
 const commonStopWords = new Set([
   "and",
@@ -131,6 +146,7 @@ const mapMeta = (row: DbPostRow): PostMeta => ({
   excerpt: row.excerpt,
   date: row.published_at,
   readingTimeMinutes: estimateReadingTime(row.content),
+  uniqueViews: row.unique_views == null ? 0 : toNumber(row.unique_views),
   updatedAt: row.updated_at
 });
 
@@ -144,7 +160,7 @@ const buildPostsWhereClause = (filters?: { q?: string }): { whereSql: string; pa
   const params: unknown[] = [];
 
   if (filters?.q && filters.q.trim().length > 0) {
-    where.push("LOWER(title) LIKE ?");
+    where.push("LOWER(p.title) LIKE ?");
     params.push(`%${filters.q.trim().toLocaleLowerCase("ru-RU")}%`);
   }
 
@@ -184,10 +200,9 @@ export const getAllPostsMeta = async (filters?: { q?: string }): Promise<PostMet
   const { whereSql, params } = buildPostsWhereClause(filters);
 
   const query = `
-    SELECT *
-    FROM posts
+    ${postsSelectWithViews}
     ${whereSql}
-    ORDER BY published_at DESC, id DESC
+    ORDER BY p.published_at DESC, p.id DESC
   `;
 
   const rows = db.prepare(query).all(...params) as DbPostRow[];
@@ -206,16 +221,15 @@ export const getPostsMetaPage = async (options?: {
   const offset = (page - 1) * pageSize;
   const { whereSql, params } = buildPostsWhereClause(options);
 
-  const totalRow = db.prepare(`SELECT COUNT(*) as count FROM posts ${whereSql}`).get(...params) as DbCountRow;
+  const totalRow = db.prepare(`SELECT COUNT(*) as count FROM posts p ${whereSql}`).get(...params) as DbCountRow;
   const total = toNumber(totalRow.count);
 
   const rows = db
     .prepare(
       `
-        SELECT *
-        FROM posts
+        ${postsSelectWithViews}
         ${whereSql}
-        ORDER BY published_at DESC, id DESC
+        ORDER BY p.published_at DESC, p.id DESC
         LIMIT ? OFFSET ?
       `
     )
@@ -234,7 +248,12 @@ export const getPostBySlug = async (slug: string): Promise<Post | null> => {
   noStore();
   const db = getDb();
   const row = db
-    .prepare("SELECT * FROM posts WHERE slug = ? LIMIT 1")
+    .prepare(
+      `
+        ${postsSelectWithViews}
+        WHERE p.slug = ? LIMIT 1
+      `
+    )
     .get(slug.trim().toLowerCase()) as DbPostRow | undefined;
   if (!row) {
     return null;
@@ -245,7 +264,14 @@ export const getPostBySlug = async (slug: string): Promise<Post | null> => {
 export const getPostById = async (id: number): Promise<Post | null> => {
   noStore();
   const db = getDb();
-  const row = db.prepare("SELECT * FROM posts WHERE id = ? LIMIT 1").get(id) as DbPostRow | undefined;
+  const row = db
+    .prepare(
+      `
+        ${postsSelectWithViews}
+        WHERE p.id = ? LIMIT 1
+      `
+    )
+    .get(id) as DbPostRow | undefined;
   if (!row) {
     return null;
   }
@@ -255,7 +281,9 @@ export const getPostById = async (id: number): Promise<Post | null> => {
 export const getAdminPosts = async (): Promise<PostMeta[]> => {
   noStore();
   const db = getDb();
-  const rows = db.prepare("SELECT * FROM posts ORDER BY published_at DESC, id DESC").all() as DbPostRow[];
+  const rows = db
+    .prepare(`${postsSelectWithViews} ORDER BY p.published_at DESC, p.id DESC`)
+    .all() as DbPostRow[];
   return rows.map(mapMeta);
 };
 
@@ -275,20 +303,19 @@ export const getAdminPostsPage = async (options?: {
     normalizedQuery.length > 0
       ? (() => {
           params.push(`%${normalizedQuery}%`);
-          return "WHERE LOWER(title) LIKE ?";
+          return "WHERE LOWER(p.title) LIKE ?";
         })()
       : "";
 
-  const totalRow = db.prepare(`SELECT COUNT(*) as count FROM posts ${whereSql}`).get(...params) as DbCountRow;
+  const totalRow = db.prepare(`SELECT COUNT(*) as count FROM posts p ${whereSql}`).get(...params) as DbCountRow;
   const total = toNumber(totalRow.count);
 
   const rows = db
     .prepare(
       `
-        SELECT *
-        FROM posts
+        ${postsSelectWithViews}
         ${whereSql}
-        ORDER BY published_at DESC, id DESC
+        ORDER BY p.published_at DESC, p.id DESC
         LIMIT ? OFFSET ?
       `
     )
@@ -377,7 +404,14 @@ export const deletePost = async (id: number): Promise<boolean> => {
 export const getRelatedPosts = async (postId: number, limit = 4): Promise<PostMeta[]> => {
   noStore();
   const db = getDb();
-  const row = db.prepare("SELECT * FROM posts WHERE id = ? LIMIT 1").get(postId) as DbPostRow | undefined;
+  const row = db
+    .prepare(
+      `
+        ${postsSelectWithViews}
+        WHERE p.id = ? LIMIT 1
+      `
+    )
+    .get(postId) as DbPostRow | undefined;
   if (!row) {
     return [];
   }
@@ -390,10 +424,9 @@ export const getRelatedPosts = async (postId: number, limit = 4): Promise<PostMe
   const candidates = db
     .prepare(
       `
-        SELECT *
-        FROM posts
-        WHERE id <> ?
-        ORDER BY published_at DESC, id DESC
+        ${postsSelectWithViews}
+        WHERE p.id <> ?
+        ORDER BY p.published_at DESC, p.id DESC
         LIMIT 120
       `
     )

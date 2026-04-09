@@ -167,6 +167,9 @@ export default function AdsEditorForm({ initialEnabled, initialMarkdown }: AdsEd
                 <button type="button" className="color-btn" onClick={() => wrapSelection("*")}>
                   Italic
                 </button>
+                <button type="button" className="color-btn" onClick={() => wrapSelection("<u>", "</u>")}>
+                  Underline
+                </button>
                 <button type="button" className="color-btn" onClick={() => wrapSelection("[", "](https://example.com)")}>
                   Link
                 </button>

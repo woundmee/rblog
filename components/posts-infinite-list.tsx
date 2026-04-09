@@ -126,8 +126,27 @@ export default function PostsInfiniteList({
         {items.map((post) => (
           <Link key={post.id} href={`/posts/${post.slug}`} className="panel post-card">
             <div className="post-card-meta">
-              <span>{new Date(post.date).toLocaleDateString("ru-RU")}</span>
-              <span>{post.readingTimeMinutes} мин чтения</span>
+              <span className="post-card-meta-item" title="Дата публикации">
+                <svg viewBox="0 0 24 24" aria-hidden>
+                  <rect x="4" y="5" width="16" height="15" rx="2" />
+                  <path d="M8 3v4M16 3v4M4 10h16" />
+                </svg>
+                <span>{new Date(post.date).toLocaleDateString("ru-RU")}</span>
+              </span>
+              <span className="post-card-meta-item" title="Время чтения">
+                <svg viewBox="0 0 24 24" aria-hidden>
+                  <circle cx="12" cy="12" r="8" />
+                  <path d="M12 8v4l3 2" />
+                </svg>
+                <span>{post.readingTimeMinutes} мин</span>
+              </span>
+              <span className="post-card-meta-item" title="Уникальные просмотры">
+                <svg viewBox="0 0 24 24" aria-hidden>
+                  <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z" />
+                  <circle cx="12" cy="12" r="2.5" />
+                </svg>
+                <span>{post.uniqueViews}</span>
+              </span>
             </div>
             <h2>{post.title}</h2>
             <p>{post.excerpt}</p>
