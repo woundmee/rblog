@@ -25,7 +25,7 @@ export default async function PostTwitterImage({ params }: TwitterImageProps) {
   const post = await getPostBySlug(slug);
 
   const title = shorten(post?.title || "rblog", 120);
-  const subtitle = shorten(post?.excerpt || "Минималистичный IT-блог о разработке.", 170);
+  const subtitle = shorten(post?.excerpt || "IT-блог о разработке.", 170);
 
   return new ImageResponse(
     (

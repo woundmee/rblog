@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     default: "rblog",
     template: "%s | rblog"
   },
-  description: "Минималистичный IT-блог",
+  description: "IT-блог о разработке",
   alternates: {
     canonical: "/"
   },
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     siteName: "rblog",
     url: siteUrl,
     title: "rblog",
-    description: "Минималистичный IT-блог",
+    description: "IT-блог о разработке",
     images: [
       {
         url: "/opengraph-image",
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "rblog",
-    description: "Минималистичный IT-блог",
+    description: "IT-блог о разработке",
     images: ["/twitter-image"]
   },
   icons: {

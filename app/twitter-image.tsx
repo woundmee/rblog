@@ -39,7 +39,7 @@ export default function TwitterImage() {
           </span>
           rblog
         </div>
-        <div style={{ fontSize: "56px", lineHeight: 1.05, fontWeight: 700 }}>Минималистичный IT-блог</div>
+        <div style={{ fontSize: "56px", lineHeight: 1.05, fontWeight: 700 }}>IT-блог о разработке</div>
         <div style={{ fontSize: "26px", color: "#aeb5c2" }}>Главная, ресурсы, заметки и разборы</div>
       </div>
     ),
