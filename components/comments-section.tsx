@@ -21,16 +21,17 @@ type CommentsSectionProps = {
 type CommentsResponse = {
   comments?: CommentItem[];
   me?: string;
+  meVisitorId?: string;
   error?: string;
   retryAfterSeconds?: number;
 };
 
 const colorOptions = [
-  { id: "blue", label: "Blue" },
-  { id: "green", label: "Green" },
-  { id: "orange", label: "Orange" },
-  { id: "red", label: "Red" },
-  { id: "purple", label: "Purple" }
+  { id: "blue", label: "Синий" },
+  { id: "green", label: "Зеленый" },
+  { id: "orange", label: "Оранжевый" },
+  { id: "red", label: "Красный" },
+  { id: "purple", label: "Фиолетовый" }
 ] as const;
 
 type ColorId = (typeof colorOptions)[number]["id"];
@@ -49,11 +50,15 @@ const formatCommentDate = (value: string): string => {
 export default function CommentsSection({ postId }: CommentsSectionProps) {
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [me, setMe] = useState("");
+  const [meVisitorId, setMeVisitorId] = useState("");
   const [content, setContent] = useState("");
   const [replyTo, setReplyTo] = useState<CommentItem | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
-  const [showFormatting, setShowFormatting] = useState(false);
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editingContent, setEditingContent] = useState("");
+  const [editingPending, setEditingPending] = useState(false);
+  const [editingError, setEditingError] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -73,32 +78,126 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
 
   const handleReply = (comment: CommentItem) => {
     setReplyTo(comment);
+    setEditingCommentId(null);
+    setEditingContent("");
+    setEditingError("");
     requestAnimationFrame(() => {
       formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       textareaRef.current?.focus();
     });
   };
 
+  const startEditing = (comment: CommentItem) => {
+    setReplyTo(null);
+    setEditingCommentId(comment.id);
+    setEditingContent(comment.content);
+    setEditingError("");
+  };
+
+  const cancelEditing = () => {
+    setEditingCommentId(null);
+    setEditingContent("");
+    setEditingError("");
+  };
+
+  const submitEdit = async (commentId: number) => {
+    if (editingPending) {
+      return;
+    }
+    const trimmed = editingContent.trim();
+    if (trimmed.length < 2) {
+      setEditingError("Комментарий слишком короткий.");
+      return;
+    }
+
+    setEditingPending(true);
+    setEditingError("");
+    try {
+      const response = await fetch(`/api/posts/${postId}/comments`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ commentId, content: trimmed })
+      });
+      const data = (await response.json().catch(() => null)) as { comment?: CommentItem; error?: string } | null;
+
+      if (!response.ok) {
+        setEditingError(data?.error ?? "Не удалось обновить комментарий.");
+        return;
+      }
+
+      if (data?.comment) {
+        setComments((prev) => prev.map((item) => (item.id === data.comment!.id ? data.comment! : item)));
+      }
+      cancelEditing();
+    } catch {
+      setEditingError("Ошибка сети. Повтори попытку.");
+    } finally {
+      setEditingPending(false);
+    }
+  };
+
   const renderComment = (comment: CommentItem, depth: number): JSX.Element => {
     const children = byParent.get(comment.id) ?? [];
+    const isOwnComment = meVisitorId.length > 0 && comment.visitorId === meVisitorId;
+    const isEditing = editingCommentId === comment.id;
+    const depthLevel = Math.min(depth, 6);
+    const repliesDepthLevel = Math.min(depth + 1, 6);
     const repliesStyle = {
       "--reply-depth": String(depth + 1)
     } as CSSProperties;
 
     return (
-      <article key={comment.id} id={`comment-${comment.id}`} className={`comment-card${depth > 0 ? " comment-card-reply" : ""}`}>
+      <article key={comment.id} id={`comment-${comment.id}`} className={`comment-card comment-depth-${depthLevel}`}>
         <header className="comment-head">
           <strong>{comment.authorLabel}</strong>
           <span>{formatCommentDate(comment.createdAt)}</span>
         </header>
-        <MarkdownRenderer markdown={comment.content} className="markdown-body comment-markdown" />
+        {isEditing ? (
+          <div className="comment-edit-box">
+            <textarea
+              className="comment-edit-input"
+              value={editingContent}
+              onChange={(event) => setEditingContent(event.target.value)}
+              maxLength={1200}
+              autoFocus
+            />
+            <div className="comment-edit-actions">
+              <button type="button" className="btn-primary" disabled={editingPending} onClick={() => void submitEdit(comment.id)}>
+                {editingPending ? "Сохранение..." : "Сохранить"}
+              </button>
+              <button type="button" className="btn-secondary" disabled={editingPending} onClick={cancelEditing}>
+                Отменить
+              </button>
+              {editingError ? <p className="text-error">{editingError}</p> : null}
+            </div>
+          </div>
+        ) : (
+          <MarkdownRenderer markdown={comment.content} className="markdown-body comment-markdown" />
+        )}
         <div className="comment-actions">
-          <button type="button" className="btn-secondary" onClick={() => handleReply(comment)}>
+          <button type="button" className="btn-secondary comment-action-btn" onClick={() => handleReply(comment)}>
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M6.2 3.8L2 8l4.2 4.2" />
+              <path d="M2.4 8h6.3a5.3 5.3 0 015.3 5.3v.2" />
+            </svg>
             Ответить
           </button>
+          {isOwnComment && !isEditing ? (
+            <button type="button" className="btn-secondary comment-action-btn" onClick={() => startEditing(comment)}>
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M11.5 2.5l2 2a1 1 0 010 1.4L6 13.4 2.5 14l.6-3.5 7.5-7.5a1 1 0 011.4 0z" />
+                <path d="M10.2 3.8l2 2" />
+              </svg>
+              Редактировать
+            </button>
+          ) : null}
         </div>
 
-        {children.length > 0 ? <div className="comment-replies" style={repliesStyle}>{children.map((child) => renderComment(child, depth + 1))}</div> : null}
+        {children.length > 0 ? (
+          <div className={`comment-replies comment-replies-depth-${repliesDepthLevel}`} style={repliesStyle}>
+            {children.map((child) => renderComment(child, depth + 1))}
+          </div>
+        ) : null}
       </article>
     );
   };
@@ -113,6 +212,7 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
       }
       setComments(data.comments ?? []);
       setMe(data.me ?? "");
+      setMeVisitorId(data.meVisitorId ?? "");
       setError("");
     } catch {
       setError("Ошибка загрузки комментариев.");
@@ -313,73 +413,82 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
       <form ref={formRef} className="comment-form" onSubmit={onSubmit}>
         {replyTo && (
           <div className="comment-replying">
-            <span>
-              Ответ для: <strong>{replyTo.authorLabel}</strong>
+            <span className="comment-replying-label">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M6.2 3.8L2 8l4.2 4.2" />
+                <path d="M2.4 8h6.3a5.3 5.3 0 015.3 5.3v.2" />
+              </svg>
+              <span>
+                Ответ для: <strong>{replyTo.authorLabel}</strong>
+              </span>
             </span>
             <button type="button" className="btn-secondary" onClick={() => setReplyTo(null)}>
               Отменить
             </button>
           </div>
         )}
-        <div className="comment-form-top">
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={() => setShowFormatting((value) => !value)}
-            aria-expanded={showFormatting}
-          >
-            Форматирование
-          </button>
-        </div>
-        {showFormatting && (
-          <section className="comment-formatting-panel">
-            <div className="comment-toolbar">
-              <button type="button" className="comment-tool-btn" onClick={() => wrapSelection("**")}>
-                Bold
-              </button>
-              <button type="button" className="comment-tool-btn" onClick={() => wrapSelection("*")}>
-                Italic
-              </button>
-              <button type="button" className="comment-tool-btn" onClick={() => wrapSelection("<u>", "</u>")}>
-                Underline
-              </button>
-              <button type="button" className="comment-tool-btn" onClick={() => wrapSelection("~~")}>
-                Strike
-              </button>
-              <button type="button" className="comment-tool-btn" onClick={() => wrapSelection("`")}>
-                Code
-              </button>
-              <button type="button" className="comment-tool-btn" onClick={() => wrapSelection("```ts\n", "\n```")}>
-                Block Code
-              </button>
-              <button type="button" className="comment-tool-btn" onClick={() => wrapSelection("[", "](https://example.com)")}>
-                Link
-              </button>
-              <button type="button" className="comment-tool-btn" onClick={() => insertSnippet("> Цитата\n", true)}>
-                Quote
-              </button>
+        <section className="comment-formatting-panel" aria-label="Форматирование">
+          <div className="comment-toolbar">
+            <button type="button" className="comment-tool-btn comment-tool-icon" onClick={() => wrapSelection("**")} aria-label="Жирный" title="Жирный">
+              <strong>B</strong>
+            </button>
+            <button type="button" className="comment-tool-btn comment-tool-icon" onClick={() => wrapSelection("*")} aria-label="Курсив" title="Курсив">
+              <em>I</em>
+            </button>
+            <button type="button" className="comment-tool-btn comment-tool-icon" onClick={() => wrapSelection("<u>", "</u>")} aria-label="Подчеркнутый" title="Подчеркнутый">
+              <span className="comment-tool-underline">U</span>
+            </button>
+            <button type="button" className="comment-tool-btn comment-tool-icon" onClick={() => wrapSelection("~~")} aria-label="Зачеркнутый" title="Зачеркнутый">
+              <span className="comment-tool-strike">S</span>
+            </button>
+            <button type="button" className="comment-tool-btn comment-tool-icon" onClick={() => wrapSelection("`")} aria-label="Встроенный код" title="Встроенный код">
+              <span className="comment-tool-code">&lt;/&gt;</span>
+            </button>
+            <button type="button" className="comment-tool-btn comment-tool-icon" onClick={() => wrapSelection("```ts\n", "\n```")} aria-label="Блок кода" title="Блок кода">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M1.5 3.5h13M1.5 8h13M1.5 12.5h13" />
+                <path d="M5.2 3.5v9M10.8 3.5v9" />
+              </svg>
+            </button>
+            <button type="button" className="comment-tool-btn comment-tool-icon" onClick={() => wrapSelection("[", "](https://example.com)")} aria-label="Ссылка" title="Ссылка">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M6.2 9.8l3.6-3.6" />
+                <path d="M5 11L3.9 12a2.3 2.3 0 01-3.2-3.2L1.8 7.7" />
+                <path d="M11 5l1.1-1.1a2.3 2.3 0 113.2 3.2L14.2 8.2" />
+              </svg>
+            </button>
+            <button type="button" className="comment-tool-btn comment-tool-icon" onClick={() => insertSnippet("> Цитата\n", true)} aria-label="Цитата" title="Цитата">
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M3 4h4v4H3zM9 4h4v4H9z" />
+                <path d="M4 8v2.4C4 11.8 3.1 13 1.8 13M10 8v2.4c0 1.4-.9 2.6-2.2 2.6" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              className="comment-tool-btn comment-tool-icon"
+              onClick={() => insertSnippet("| Колонка 1 | Колонка 2 |\n| --- | --- |\n| Значение | Значение |\n", true)}
+              aria-label="Таблица"
+              title="Таблица"
+            >
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <rect x="1.5" y="2.5" width="13" height="11" rx="1.5" />
+                <path d="M1.5 6.5h13M1.5 10h13M6 2.5v11M10 2.5v11" />
+              </svg>
+            </button>
+            {colorOptions.map((color) => (
               <button
+                key={color.id}
                 type="button"
-                className="comment-tool-btn"
-                onClick={() => insertSnippet("| Колонка 1 | Колонка 2 |\n| --- | --- |\n| Значение | Значение |\n", true)}
+                className={`comment-tool-btn comment-tool-icon comment-color-btn color-${color.id}`}
+                onClick={() => applyColor(color.id)}
+                aria-label={`Цвет: ${color.label}`}
+                title={`Цвет: ${color.label}`}
               >
-                Table
+                <span className="comment-color-dot" />
               </button>
-            </div>
-            <div className="comment-color-toolbar">
-              {colorOptions.map((color) => (
-                <button
-                  key={color.id}
-                  type="button"
-                  className={`comment-tool-btn color-${color.id}`}
-                  onClick={() => applyColor(color.id)}
-                >
-                  {color.label}
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
+            ))}
+          </div>
+        </section>
         <textarea
           ref={textareaRef}
           value={content}
@@ -394,8 +503,8 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
           <button type="submit" className="btn-primary" disabled={pending}>
             {pending ? "Отправка..." : replyTo ? "Ответить" : "Отправить"}
           </button>
-          {error && <p className="text-error">{error}</p>}
         </div>
+        {error && <p className="text-error">{error}</p>}
       </form>
 
       <div className="comments-list">

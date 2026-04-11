@@ -11,6 +11,7 @@ import ArticleToc from "@/components/article-toc";
 import { extractMarkdownHeadings } from "@/lib/markdown-headings";
 import ShareArticleButton from "@/components/share-article-button";
 import CommentsSection from "@/components/comments-section";
+import RelatedPostsSlider from "@/components/related-posts-slider";
 
 type PostPageParams = {
   params: Promise<{ slug: string }>;
@@ -76,6 +77,14 @@ export default async function PostPage({
 
   const related = await getRelatedPosts(post.id, 4);
   const headings = extractMarkdownHeadings(post.content);
+  const relatedItems = related.map((item) => ({
+    id: item.id,
+    slug: item.slug,
+    title: item.title,
+    excerpt: item.excerpt,
+    dateLabel: new Date(item.date).toLocaleDateString("ru-RU"),
+    readingTimeMinutes: item.readingTimeMinutes
+  }));
 
   return (
     <article className="panel article-view">
@@ -132,17 +141,7 @@ export default async function PostPage({
           <header className="section-head section-head-compact">
             <h2>Похожие статьи</h2>
           </header>
-          <div className="article-related-grid">
-            {related.map((item) => (
-              <Link key={item.id} href={`/posts/${item.slug}`} className="article-related-card">
-                <h3>{item.title}</h3>
-                <p>{item.excerpt}</p>
-                <span>
-                  {new Date(item.date).toLocaleDateString("ru-RU")} · {item.readingTimeMinutes} мин
-                </span>
-              </Link>
-            ))}
-          </div>
+          <RelatedPostsSlider items={relatedItems} />
         </section>
       )}
       <CommentsSection postId={post.id} />

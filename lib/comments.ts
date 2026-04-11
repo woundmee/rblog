@@ -54,7 +54,7 @@ export type CommentNotificationItem = {
   isRead: boolean;
 };
 
-const COMMENT_COOLDOWN_MS = 60 * 1000;
+const COMMENT_COOLDOWN_MS = 30 * 1000;
 const COMMENT_MIN_LENGTH = 2;
 const COMMENT_MAX_LENGTH = 1200;
 
@@ -68,6 +68,8 @@ export class CommentRateLimitError extends Error {
 }
 
 export class CommentValidationError extends Error {}
+export class CommentAccessError extends Error {}
+export class CommentNotFoundError extends Error {}
 
 const adjectivePool = [
   "Северный",
@@ -216,6 +218,66 @@ export const createPostComment = async (input: {
   }
 
   return mapComment(inserted);
+};
+
+export const updatePostComment = async (input: {
+  postId: number;
+  commentId: number;
+  visitorId: string;
+  content: string;
+}): Promise<CommentItem> => {
+  const db = getDb();
+  const content = normalizeContent(input.content);
+  if (content.length < COMMENT_MIN_LENGTH) {
+    throw new CommentValidationError("Комментарий слишком короткий.");
+  }
+  if (content.length > COMMENT_MAX_LENGTH) {
+    throw new CommentValidationError(`Комментарий слишком длинный (максимум ${COMMENT_MAX_LENGTH} символов).`);
+  }
+
+  const existing = db
+    .prepare(
+      `
+        SELECT id, post_id, visitor_id
+        FROM post_comments
+        WHERE id = ? LIMIT 1
+      `
+    )
+    .get(input.commentId) as { id: number; post_id: number; visitor_id: string } | undefined;
+
+  if (!existing) {
+    throw new CommentNotFoundError("Комментарий не найден.");
+  }
+  if (existing.post_id !== input.postId) {
+    throw new CommentValidationError("Некорректный комментарий.");
+  }
+  if (existing.visitor_id !== input.visitorId) {
+    throw new CommentAccessError("Можно редактировать только свои комментарии.");
+  }
+
+  const now = new Date().toISOString();
+  db.prepare(
+    `
+      UPDATE post_comments
+      SET content = ?, updated_at = ?
+      WHERE id = ?
+    `
+  ).run(content, now, input.commentId);
+
+  const updated = db
+    .prepare(
+      `
+        SELECT id, post_id, parent_id, visitor_id, author_label, content, created_at, updated_at
+        FROM post_comments
+        WHERE id = ? LIMIT 1
+      `
+    )
+    .get(input.commentId) as DbCommentRow | undefined;
+
+  if (!updated) {
+    throw new CommentNotFoundError("Комментарий не найден.");
+  }
+  return mapComment(updated);
 };
 
 export const getCommentNotifications = async (visitorId: string): Promise<{
