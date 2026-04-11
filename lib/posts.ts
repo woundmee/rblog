@@ -61,15 +61,13 @@ const toNumber = (value: number | bigint): number => Number(value);
 
 const postsSelectWithViews = `
   SELECT p.*,
-    COALESCE(
-      (
-        SELECT COUNT(DISTINCT v.visitor_id)
-        FROM post_views v
-        WHERE v.post_id = p.id
-      ),
-      0
-    ) AS unique_views
+    COALESCE(pv.unique_views, 0) AS unique_views
   FROM posts p
+  LEFT JOIN (
+    SELECT post_id, COUNT(DISTINCT visitor_id) AS unique_views
+    FROM post_views
+    GROUP BY post_id
+  ) pv ON pv.post_id = p.id
 `;
 
 const commonStopWords = new Set([

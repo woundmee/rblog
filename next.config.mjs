@@ -1,5 +1,11 @@
 /** @type {import('next').NextConfig} */
 const isProduction = process.env.NODE_ENV === "production";
+const scriptSrc = isProduction
+  ? "script-src 'self'"
+  : "script-src 'self' 'unsafe-inline' 'unsafe-eval'";
+const connectSrc = isProduction
+  ? "connect-src 'self' https:"
+  : "connect-src 'self' https: http: ws: wss:";
 
 const contentSecurityPolicy = [
   "default-src 'self'",
@@ -9,9 +15,10 @@ const contentSecurityPolicy = [
   "form-action 'self'",
   "img-src 'self' data: https:",
   "font-src 'self' data:",
-  `script-src 'self' 'unsafe-inline'${isProduction ? "" : " 'unsafe-eval'"}`,
+  scriptSrc,
   "style-src 'self' 'unsafe-inline'",
-  "connect-src 'self' https: http: ws: wss:"
+  connectSrc,
+  ...(isProduction ? ["upgrade-insecure-requests"] : [])
 ].join("; ");
 
 const securityHeaders = [

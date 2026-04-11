@@ -13,6 +13,7 @@ const defaultAdMarkdown = "###### Партнёрский блок\nКоротк�
 
 type SqliteDatabase = {
   exec: (sql: string) => void;
+  transaction: <T extends (...args: never[]) => unknown>(fn: T) => T;
   prepare: (sql: string) => {
     get: (...params: unknown[]) => unknown;
     all: (...params: unknown[]) => unknown[];
@@ -91,6 +92,35 @@ const initSchema = (db: SqliteDatabase) => {
     );
 
     CREATE INDEX IF NOT EXISTS idx_post_reactions_reacted_at ON post_reactions(reacted_at DESC);
+
+    CREATE TABLE IF NOT EXISTS post_comments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      post_id INTEGER NOT NULL,
+      parent_id INTEGER,
+      visitor_id TEXT NOT NULL,
+      author_label TEXT NOT NULL,
+      content TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY(post_id) REFERENCES posts(id) ON DELETE CASCADE,
+      FOREIGN KEY(parent_id) REFERENCES post_comments(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_post_comments_post_id ON post_comments(post_id);
+    CREATE INDEX IF NOT EXISTS idx_post_comments_parent_id ON post_comments(parent_id);
+    CREATE INDEX IF NOT EXISTS idx_post_comments_created_at ON post_comments(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_post_comments_visitor_id ON post_comments(visitor_id);
+
+    CREATE TABLE IF NOT EXISTS comment_notification_reads (
+      visitor_id TEXT NOT NULL,
+      comment_id INTEGER NOT NULL,
+      read_at TEXT NOT NULL,
+      PRIMARY KEY(visitor_id, comment_id),
+      FOREIGN KEY(comment_id) REFERENCES post_comments(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_comment_notification_reads_visitor_id ON comment_notification_reads(visitor_id);
+    CREATE INDEX IF NOT EXISTS idx_comment_notification_reads_comment_id ON comment_notification_reads(comment_id);
 
     CREATE TABLE IF NOT EXISTS admin_login_attempts (
       key TEXT PRIMARY KEY,

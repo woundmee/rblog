@@ -9,6 +9,8 @@ import PostEngagement from "@/components/post-engagement";
 import ReadingProgress from "@/components/reading-progress";
 import ArticleToc from "@/components/article-toc";
 import { extractMarkdownHeadings } from "@/lib/markdown-headings";
+import ShareArticleButton from "@/components/share-article-button";
+import CommentsSection from "@/components/comments-section";
 
 type PostPageParams = {
   params: Promise<{ slug: string }>;
@@ -83,16 +85,19 @@ export default async function PostPage({
           <Link href="/" className="article-back-link">
             ← Назад
           </Link>
-          <ReadLaterButton
-            post={{
-              kind: "post",
-              id: post.id,
-              slug: post.slug,
-              title: post.title,
-              excerpt: post.excerpt,
-              date: post.date
-            }}
-          />
+          <div className="article-header-actions-right">
+            <ShareArticleButton title={post.title} />
+            <ReadLaterButton
+              post={{
+                kind: "post",
+                id: post.id,
+                slug: post.slug,
+                title: post.title,
+                excerpt: post.excerpt,
+                date: post.date
+              }}
+            />
+          </div>
         </div>
         <div className="article-meta">
           <span className="article-meta-item" title="Дата публикации">
@@ -140,6 +145,7 @@ export default async function PostPage({
           </div>
         </section>
       )}
+      <CommentsSection postId={post.id} />
     </article>
   );
 }

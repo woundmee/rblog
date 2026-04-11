@@ -45,6 +45,14 @@ export default function ResourcesInfiniteGrid({
   const [error, setError] = useState("");
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
+  useEffect(() => {
+    setItems(initialItems);
+    setPage(initialPage);
+    setHasMore(initialHasMore);
+    setError("");
+    setIsLoading(false);
+  }, [initialHasMore, initialItems, initialPage, pageSize, query]);
+
   const loadMore = useCallback(async () => {
     if (isLoading || !hasMore) {
       return;

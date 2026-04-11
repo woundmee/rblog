@@ -65,7 +65,19 @@
     color: var(--text-2);
   }
 
+  .nav-notifications-btn {
+    border-color: var(--line);
+    background: var(--surface-soft);
+    color: var(--text-2);
+  }
+
   .nav-favorites-btn:hover {
+    border-color: var(--line-strong);
+    background: var(--surface-strong);
+    color: var(--text-1);
+  }
+
+  .nav-notifications-btn:hover {
     border-color: var(--line-strong);
     background: var(--surface-strong);
     color: var(--text-1);
@@ -77,7 +89,19 @@
     color: var(--text-1);
   }
 
+  .nav-notifications-btn.active {
+    border-color: var(--line-strong);
+    background: var(--surface-strong);
+    color: var(--text-1);
+  }
+
   .nav-favorites-btn.active:hover {
+    border-color: var(--line-strong);
+    background: var(--line);
+    color: var(--text-1);
+  }
+
+  .nav-notifications-btn.active:hover {
     border-color: var(--line-strong);
     background: var(--line);
     color: var(--text-1);
@@ -286,6 +310,7 @@ a {
   display: inline-grid;
   place-items: center;
   cursor: pointer;
+  position: relative;
 }
 
 .nav-icon-btn svg {
@@ -296,6 +321,22 @@ a {
   stroke-width: 1.7;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.nav-notifications-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #d95978;
+  color: #fff;
+  font-size: 0.62rem;
+  line-height: 16px;
+  text-align: center;
+  border: 1px solid var(--surface);
 }
 
 .center-nav-link:hover {
@@ -325,7 +366,7 @@ a {
   justify-content: flex-end;
 }
 
-.mobile-top-about {
+.mobile-top-notifications {
   display: none;
 }
 
@@ -446,6 +487,45 @@ a {
 
 .bookmark-sheet-item strong {
   font-size: 0.88rem;
+}
+
+.notification-item {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-soft);
+  padding: 10px;
+}
+
+.notification-item.unread {
+  border-color: var(--line-strong);
+  background: color-mix(in srgb, var(--surface-soft) 84%, var(--surface));
+}
+
+.notification-item a {
+  display: grid;
+  gap: 4px;
+}
+
+.notification-item strong {
+  font-size: 0.84rem;
+  color: var(--text-1);
+}
+
+.notification-item span {
+  font-size: 0.78rem;
+  color: var(--text-2);
+}
+
+.notification-item p {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.notification-item time {
+  color: var(--text-3);
+  font-size: 0.72rem;
 }
 
 .bookmark-remove-btn {
@@ -809,7 +889,7 @@ a {
 }
 
 .article-view {
-  padding: 22px;
+  padding: 22px 22px 30px;
 }
 
 .reading-progress {
@@ -855,6 +935,12 @@ a {
   gap: 8px;
 }
 
+.article-header-actions-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .article-back-link:hover {
   border-color: var(--line-strong);
   color: var(--text-1);
@@ -890,6 +976,40 @@ a {
 }
 
 .article-bookmark-btn.active {
+  border-color: var(--active-bg);
+  background: var(--active-bg);
+  color: var(--active-text);
+}
+
+.article-share-btn {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--text-2);
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.article-share-btn svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.article-share-btn:hover {
+  border-color: var(--line-strong);
+  color: var(--text-1);
+}
+
+.article-share-btn.copied {
   border-color: var(--active-bg);
   background: var(--active-bg);
   color: var(--active-text);
@@ -999,9 +1119,9 @@ a {
 }
 
 .article-related {
-  margin-top: 32px;
+  margin-top: 34px;
   border-top: 1px solid var(--line);
-  padding-top: 14px;
+  padding-top: 16px;
 }
 
 .article-related-grid {
@@ -1038,6 +1158,211 @@ a {
 .article-related-card span {
   color: var(--text-3);
   font-size: 0.76rem;
+}
+
+.comments-section {
+  margin-top: 22px;
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.comments-head {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.comments-total {
+  white-space: nowrap;
+}
+
+.comment-form {
+  display: grid;
+  gap: 9px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-soft);
+  padding: 10px;
+}
+
+.comment-form-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.comment-formatting-panel {
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface-soft) 88%, transparent);
+  padding: 8px;
+  display: grid;
+  gap: 8px;
+}
+
+.comment-form textarea {
+  width: 100%;
+  min-height: 96px;
+  resize: vertical;
+}
+
+.comment-input {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text-1);
+  font: inherit;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  padding: 10px 11px;
+}
+
+.comment-input:focus {
+  outline: none;
+  border-color: var(--line-strong);
+}
+
+.comment-toolbar {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.comment-color-toolbar {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.comment-tool-btn {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-2);
+  font: inherit;
+  font-size: 0.74rem;
+  line-height: 1;
+  padding: 5px 8px;
+  cursor: pointer;
+}
+
+.comment-tool-btn:hover {
+  border-color: var(--line-strong);
+  color: var(--text-1);
+}
+
+.comment-hint {
+  margin: 0;
+  color: var(--text-3);
+  font-size: 0.73rem;
+}
+
+.comment-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.comment-replying {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  background: var(--surface-soft);
+  color: var(--text-2);
+  font-size: 0.78rem;
+  padding: 6px 8px;
+}
+
+.comments-list {
+  display: grid;
+  gap: 8px;
+}
+
+.comment-card {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-soft);
+  padding: 10px;
+}
+
+.comment-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.comment-head strong {
+  font-size: 0.84rem;
+  color: var(--text-1);
+}
+
+.comment-head span {
+  font-size: 0.74rem;
+  color: var(--text-3);
+}
+
+.comment-card p {
+  margin: 6px 0 0;
+  white-space: pre-wrap;
+  color: var(--text-2);
+}
+
+.comment-markdown {
+  margin-top: 6px;
+  line-height: 1.65;
+}
+
+.comment-markdown p,
+.comment-markdown ul,
+.comment-markdown ol {
+  margin: 0.35em 0;
+}
+
+.comment-markdown h1,
+.comment-markdown h2,
+.comment-markdown h3,
+.comment-markdown h4,
+.comment-markdown h5,
+.comment-markdown h6 {
+  margin-top: 0.8em;
+  margin-bottom: 0.3em;
+  font-size: 0.92em;
+}
+
+.comment-actions {
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.comment-actions .btn-secondary {
+  font-size: 0.74rem;
+  padding: 4px 8px;
+}
+
+.comment-replies {
+  margin-top: 10px;
+  margin-left: min(calc(var(--reply-depth, 1) * 10px), 42px);
+  padding-left: 10px;
+  border-left: 1px dashed var(--line);
+  display: grid;
+  gap: 8px;
+}
+
+.comment-card-reply {
+  background: color-mix(in srgb, var(--surface-soft) 84%, var(--surface));
 }
 
 .markdown-body {
@@ -1800,7 +2125,8 @@ a {
 }
 
 .post-engagement {
-  margin-top: 16px;
+  margin-top: 22px;
+  margin-bottom: 20px;
 }
 
 .reaction-row {
@@ -2338,7 +2664,7 @@ a {
     width: 100%;
   }
 
-  .mobile-top-about {
+  .mobile-top-notifications {
     width: 34px;
     height: 34px;
     border: 1px solid var(--line);
@@ -2347,9 +2673,11 @@ a {
     color: var(--text-2);
     display: inline-grid;
     place-items: center;
+    position: relative;
+    cursor: pointer;
   }
 
-  .mobile-top-about svg {
+  .mobile-top-notifications svg {
     width: 16px;
     height: 16px;
     fill: none;
@@ -2359,20 +2687,36 @@ a {
     stroke-linejoin: round;
   }
 
-  .mobile-top-about:hover {
+  .mobile-top-notifications:hover {
     border-color: var(--line-strong);
     color: var(--text-1);
   }
 
-  .mobile-top-about.active {
+  .mobile-top-notifications.active {
     background: var(--active-bg);
     border-color: var(--active-bg);
     color: var(--active-text);
   }
 
-  .mobile-top-about.active:hover {
+  .mobile-top-notifications.active:hover {
     background: var(--active-hover);
     border-color: var(--active-hover);
+  }
+
+  .mobile-top-notifications-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 15px;
+    height: 15px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: #d95978;
+    color: #fff;
+    font-size: 0.58rem;
+    line-height: 15px;
+    text-align: center;
+    border: 1px solid var(--surface);
   }
 
   .search-shortcut {

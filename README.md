@@ -66,6 +66,7 @@ ADMIN_SESSION_TTL_SECONDS=43200
 ADMIN_RATE_LIMIT_MAX_ATTEMPTS=5
 ADMIN_RATE_LIMIT_WINDOW_SECONDS=900
 ADMIN_RATE_LIMIT_LOCK_SECONDS=900
+TRUST_PROXY_HEADERS=0
 ```
 
 ### Что означает каждая переменная
@@ -77,6 +78,8 @@ ADMIN_RATE_LIMIT_LOCK_SECONDS=900
   Если его поменять, текущие админ-сессии станут невалидными и потребуется повторный вход.
 - `ADMIN_PASSWORD` — legacy fallback только для локальной разработки, когда не задан `ADMIN_PASSWORD_HASH`.  
   Для production лучше не использовать.
+- `TRUST_PROXY_HEADERS` — доверять ли `x-forwarded-*` заголовкам (`1`/`true`) для Origin-check и rate-limit по IP.  
+  По умолчанию `0` (безопаснее). Включай `1` только если reverse proxy гарантированно очищает поддельные заголовки от клиента.
 
 ### Если забыл пароль
 
@@ -149,4 +152,3 @@ export NVM_DIR="$HOME/.nvm"; . "$NVM_DIR/nvm.sh"; nvm use 20
 npm ci
 npm run build
 systemctl restart rblog
-

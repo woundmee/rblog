@@ -23,6 +23,18 @@ const safeParseInt = (value: string | undefined, fallback: number, min: number, 
   return Math.min(max, Math.max(min, parsed));
 };
 
+const isTruthyEnv = (value: string | undefined): boolean => {
+  if (!value) {
+    return false;
+  }
+  const normalized = value.trim().toLowerCase();
+  return normalized === "1" || normalized === "true" || normalized === "yes" || normalized === "on";
+};
+
+const shouldTrustProxyHeaders = (): boolean => isTruthyEnv(process.env.TRUST_PROXY_HEADERS);
+
+const firstHeaderValue = (value: string | null): string => value?.split(",")[0]?.trim() ?? "";
+
 const getAdminUsername = (): string => {
   const username = process.env.ADMIN_USERNAME?.trim();
   if (username) {
@@ -219,13 +231,19 @@ export const isAdminRequest = async (): Promise<boolean> => {
 };
 
 const getExpectedOrigin = (request: Request): string => {
-  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  const requestUrl = new URL(request.url);
+  const trustProxyHeaders = shouldTrustProxyHeaders();
+  const host = trustProxyHeaders
+    ? firstHeaderValue(request.headers.get("x-forwarded-host")) || firstHeaderValue(request.headers.get("host"))
+    : firstHeaderValue(request.headers.get("host"));
   if (!host) {
-    return new URL(request.url).origin;
+    return requestUrl.origin;
   }
 
-  const forwardedProto = request.headers.get("x-forwarded-proto");
-  const protocol = forwardedProto ?? new URL(request.url).protocol.replace(":", "");
+  const forwardedProto = firstHeaderValue(request.headers.get("x-forwarded-proto"));
+  const protocol = trustProxyHeaders
+    ? forwardedProto || requestUrl.protocol.replace(":", "")
+    : requestUrl.protocol.replace(":", "");
   return `${protocol}://${host}`;
 };
 
@@ -268,12 +286,21 @@ type LoginRateLimitState = {
 };
 
 const getClientIp = (request: Request): string => {
-  const forwardedFor = request.headers.get("x-forwarded-for");
-  if (forwardedFor) {
-    return forwardedFor.split(",")[0]?.trim() || "unknown";
+  if (!shouldTrustProxyHeaders()) {
+    return "unknown";
   }
 
-  const realIp = request.headers.get("x-real-ip");
+  const cfConnectingIp = firstHeaderValue(request.headers.get("cf-connecting-ip"));
+  if (cfConnectingIp) {
+    return cfConnectingIp;
+  }
+
+  const forwardedFor = firstHeaderValue(request.headers.get("x-forwarded-for"));
+  if (forwardedFor) {
+    return forwardedFor;
+  }
+
+  const realIp = firstHeaderValue(request.headers.get("x-real-ip"));
   if (realIp) {
     return realIp;
   }
@@ -283,8 +310,11 @@ const getClientIp = (request: Request): string => {
 
 const getRateLimitKeys = (request: Request, username: string): string[] => {
   const ip = getClientIp(request);
+  const userAgent = request.headers.get("user-agent")?.trim().toLowerCase() ?? "_";
+  const userAgentKey = crypto.createHash("sha256").update(userAgent).digest("hex").slice(0, 12);
+  const clientKey = ip !== "unknown" ? `ip:${ip}` : `ua:${userAgentKey}`;
   const normalizedUser = username.trim().toLowerCase() || "_";
-  return [`ip:${ip}`, `user:${normalizedUser}`, `combo:${ip}:${normalizedUser}`];
+  return [`client:${clientKey}`, `user:${normalizedUser}`, `combo:${clientKey}:${normalizedUser}`];
 };
 
 const loadAttempt = (key: string): LoginAttemptRow | null => {

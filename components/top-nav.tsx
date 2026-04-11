@@ -11,6 +11,44 @@ import {
   readLaterSaveItems
 } from "@/lib/read-later";
 
+function NotificationBellIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden suppressHydrationWarning>
+      <path d="M12 4a4 4 0 00-4 4v2.5c0 1.8-.7 3.5-2 4.8l-.8.8h13.6l-.8-.8a6.8 6.8 0 01-2-4.8V8a4 4 0 00-4-4z" />
+      <path d="M9.5 18a2.5 2.5 0 005 0" />
+    </svg>
+  );
+}
+
+type CommentNotificationItem = {
+  id: number;
+  postId: number;
+  postSlug: string;
+  postTitle: string;
+  parentId: number;
+  parentAuthorLabel: string;
+  authorLabel: string;
+  content: string;
+  createdAt: string;
+  isRead: boolean;
+};
+
+type CommentNotificationsResponse = {
+  items: CommentNotificationItem[];
+  unreadCount: number;
+};
+
+const formatNotificationDate = (value: string): string => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+  return date.toLocaleString("ru-RU", {
+    dateStyle: "short",
+    timeStyle: "short"
+  });
+};
+
 const navItems = [
   { href: "/", label: "Главная" },
   { href: "/resources", label: "Ресурсы" },
@@ -32,6 +70,10 @@ export default function TopNav() {
   const [shortcutHint, setShortcutHint] = useState({ mod: "Ctrl", key: "K" });
   const [favoritesOpen, setFavoritesOpen] = useState(false);
   const [favorites, setFavorites] = useState<ReadLaterItem[]>([]);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<CommentNotificationItem[]>([]);
+  const [notificationsUnread, setNotificationsUnread] = useState(0);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const hideNav = pathname === "/admin/login";
 
@@ -54,12 +96,14 @@ export default function TopNav() {
 
   useEffect(() => {
     setFavoritesOpen(false);
+    setNotificationsOpen(false);
   }, [pathname]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setFavoritesOpen(false);
+        setNotificationsOpen(false);
         return;
       }
       if (event.defaultPrevented) {
@@ -81,6 +125,56 @@ export default function TopNav() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
+
+  const loadNotifications = async () => {
+    setNotificationsLoading(true);
+    try {
+      const response = await fetch("/api/notifications/comments", { cache: "no-store" });
+      if (!response.ok) {
+        return;
+      }
+      const data = (await response.json()) as CommentNotificationsResponse;
+      setNotifications(data.items ?? []);
+      setNotificationsUnread(data.unreadCount ?? 0);
+    } catch {
+      // ignore
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadNotifications();
+  }, []);
+
+  const markNotificationsRead = async () => {
+    try {
+      const response = await fetch("/api/notifications/comments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ markAll: true })
+      });
+      if (!response.ok) {
+        return;
+      }
+      const data = (await response.json()) as CommentNotificationsResponse & { ok?: boolean };
+      setNotifications(data.items ?? []);
+      setNotificationsUnread(data.unreadCount ?? 0);
+    } catch {
+      // ignore
+    }
+  };
+
+  const toggleNotifications = async () => {
+    const next = !notificationsOpen;
+    setNotificationsOpen(next);
+    setFavoritesOpen(false);
+    if (!next) {
+      return;
+    }
+    await loadNotifications();
+    await markNotificationsRead();
+  };
 
   const onSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -130,17 +224,18 @@ export default function TopNav() {
             </form>
           </div>
 
-          <Link
-            href="/about"
-            className={`mobile-top-about${isActive(pathname, "/about") ? " active" : ""}`}
-            aria-label="Обо мне"
-            title="Обо мне"
+          <button
+            type="button"
+            className={`mobile-top-notifications${notificationsOpen ? " active" : ""}`}
+            onClick={() => void toggleNotifications()}
+            aria-label="Уведомления"
+            title="Уведомления"
           >
-            <svg viewBox="0 0 24 24" aria-hidden>
-              <circle cx="12" cy="8" r="3.2" />
-              <path d="M5 20c1.6-3.6 4-5.4 7-5.4s5.4 1.8 7 5.4" />
-            </svg>
-          </Link>
+            <NotificationBellIcon />
+            {notificationsUnread > 0 ? (
+              <span className="mobile-top-notifications-badge">{notificationsUnread > 9 ? "9+" : notificationsUnread}</span>
+            ) : null}
+          </button>
 
           <nav className="center-nav topbar-links" aria-label="Основные разделы">
             {navItems.map((item) => (
@@ -155,13 +250,33 @@ export default function TopNav() {
             <button
               type="button"
               className={`center-nav-link nav-icon-btn nav-favorites-btn${favoritesOpen ? " active" : ""}`}
-              onClick={() => setFavoritesOpen((value) => !value)}
+              onClick={() => {
+                setFavoritesOpen((value) => {
+                  const next = !value;
+                  if (next) {
+                    setNotificationsOpen(false);
+                  }
+                  return next;
+                });
+              }}
               aria-label="Избранное"
               title="Избранное"
             >
               <svg viewBox="0 0 24 24" aria-hidden>
                 <path d="M7 4h10a1 1 0 011 1v15l-6-3-6 3V5a1 1 0 011-1z" />
               </svg>
+            </button>
+            <button
+              type="button"
+              className={`center-nav-link nav-icon-btn nav-notifications-btn${notificationsOpen ? " active" : ""}`}
+              onClick={() => void toggleNotifications()}
+              aria-label="Уведомления"
+              title="Уведомления"
+            >
+              <NotificationBellIcon />
+              {notificationsUnread > 0 ? (
+                <span className="nav-notifications-badge">{notificationsUnread > 9 ? "9+" : notificationsUnread}</span>
+              ) : null}
             </button>
           </nav>
         </div>
@@ -196,6 +311,35 @@ export default function TopNav() {
                     >
                       Удалить
                     </button>
+                  </article>
+                ))
+              )}
+            </div>
+          </section>
+        </div>
+      )}
+
+      {notificationsOpen && (
+        <div className="bookmark-overlay" onClick={() => setNotificationsOpen(false)}>
+          <section className="bookmark-sheet panel" onClick={(event) => event.stopPropagation()}>
+            <header className="section-head section-head-compact">
+              <h2>Уведомления</h2>
+              <p>{notificationsUnread} новых</p>
+            </header>
+            <div className="bookmark-sheet-list">
+              {notificationsLoading ? (
+                <p className="section-note">Загрузка...</p>
+              ) : notifications.length === 0 ? (
+                <p className="section-note">Пока уведомлений нет.</p>
+              ) : (
+                notifications.map((item) => (
+                  <article key={item.id} className={`notification-item${item.isRead ? "" : " unread"}`}>
+                    <Link href={`/posts/${item.postSlug}#comment-${item.id}`} onClick={() => setNotificationsOpen(false)}>
+                      <strong>{item.authorLabel} ответил(а) на твой комментарий</strong>
+                      <span>{item.postTitle}</span>
+                      <p>{item.content}</p>
+                      <time>{formatNotificationDate(item.createdAt)}</time>
+                    </Link>
                   </article>
                 ))
               )}
