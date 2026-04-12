@@ -254,8 +254,12 @@ export default function MarkdownRenderer({ markdown, className, allowRawHtml = t
     .replace(/```c#/gi, "```csharp")
     .replace(/```js\b/gi, "```javascript")
     .replace(/```ts\b/gi, "```typescript");
-  const transformed = allowRawHtml ? applyColorTokens(normalized) : normalized;
-  const rehypePlugins = (allowRawHtml
+  const escapedForSafeMode = allowRawHtml
+    ? normalized
+    : normalized.replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+  const transformed = applyColorTokens(escapedForSafeMode);
+  const needsRawPlugin = allowRawHtml || transformed !== escapedForSafeMode;
+  const rehypePlugins = (needsRawPlugin
     ? [rehypeRaw, [rehypeSanitize, sanitizeSchema], rehypeHighlight]
     : [[rehypeSanitize, sanitizeSchema], rehypeHighlight]) as NonNullable<ReactMarkdownOptions["rehypePlugins"]>;
   const createHeading = (tag: "h1" | "h2" | "h3" | "h4" | "h5" | "h6") => {
