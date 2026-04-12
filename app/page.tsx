@@ -44,41 +44,46 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const [postsPage, resourcesPage] = await Promise.all([postsPagePromise, resourcesPagePromise]);
 
   const totalResults = postsPage.total + resourcesPage.total;
+  const noSearchResults = query.length > 0 && totalResults === 0;
 
   return (
     <section className="content-stack">
       <header className="content-header">
         <h1>{query ? "Поиск" : "Главная"}</h1>
         {query ? (
-          <p>
-            {totalResults} результатов по запросу <strong>{query}</strong>
-          </p>
+          noSearchResults ? null : (
+            <p>
+              {totalResults} результатов по запросу <strong>{query}</strong>
+            </p>
+          )
         ) : (
-          <p>{postsPage.total} статей</p>
+          <p>
+            {postsPage.total} статей
+          </p>
         )}
       </header>
 
-      {query && (
+      {query && !noSearchResults && (
         <section className="section-head section-head-compact">
           <h2>Главная</h2>
           <p>{postsPage.total} найдено</p>
         </section>
       )}
 
-      <PostsInfiniteList
-        initialItems={postsPage.items}
-        initialPage={postsPage.page}
-        pageSize={postsPage.pageSize}
-        initialHasMore={postsPage.hasMore}
-        query={query || undefined}
-        emptyMessage={
-          query
-            ? "По статьям ничего не найдено."
-            : "Ничего не найдено. Попробуй изменить фильтры или опубликовать новую статью."
-        }
-      />
+      {noSearchResults ? (
+        <p className="section-note">Ничего не найдено</p>
+      ) : (
+        <PostsInfiniteList
+          initialItems={postsPage.items}
+          initialPage={postsPage.page}
+          pageSize={postsPage.pageSize}
+          initialHasMore={postsPage.hasMore}
+          query={query || undefined}
+          emptyMessage="Ничего не найдено"
+        />
+      )}
 
-      {query && (
+      {query && !noSearchResults && (
         <>
           <section className="section-head section-head-compact">
             <h2>Ресурсы</h2>

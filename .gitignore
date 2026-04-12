@@ -8,3 +8,6 @@ out
 rblog.db
 rblog.db-shm
 rblog.db-wal
+
+uploads/images/*
+!uploads/images/.gitkeep

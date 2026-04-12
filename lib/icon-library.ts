@@ -58,10 +58,88 @@ export const iconLibrary: IconDefinition[] = [
   { id: "server", label: "Server", body: '<rect x="4" y="5" width="16" height="6" rx="1.5" /><rect x="4" y="13" width="16" height="6" rx="1.5" /><path d="M8 8h.01M8 16h.01" />' },
   { id: "monitor", label: "Monitor", body: '<rect x="3" y="5" width="18" height="12" rx="2" /><path d="M9 21h6M12 17v4" />' },
   { id: "bug", label: "Bug", body: '<path d="M9 8a3 3 0 016 0v6a3 3 0 11-6 0V8z" /><path d="M4 9h4M16 9h4M4 13h4M16 13h4M6 5l2 2M18 5l-2 2" />' },
-  { id: "settings", label: "Settings", body: '<circle cx="12" cy="12" r="3" /><path d="M19.4 15a1 1 0 00.2 1.1l.1.1a1 1 0 010 1.4l-1.4 1.4a1 1 0 01-1.4 0l-.1-.1a1 1 0 00-1.1-.2 1 1 0 00-.6.9V20a1 1 0 01-1 1h-2a1 1 0 01-1-1v-.2a1 1 0 00-.6-.9 1 1 0 00-1.1.2l-.1.1a1 1 0 01-1.4 0l-1.4-1.4a1 1 0 010-1.4l.1-.1a1 1 0 00.2-1.1 1 1 0 00-.9-.6H4a1 1 0 01-1-1v-2a1 1 0 011-1h.2a1 1 0 00.9-.6 1 1 0 00-.2-1.1l-.1-.1a1 1 0 010-1.4L6.2 4a1 1 0 011.4 0l.1.1a1 1 0 001.1.2 1 1 0 00.6-.9V3a1 1 0 011-1h2a1 1 0 011 1v.2a1 1 0 00.6.9 1 1 0 001.1-.2l.1-.1a1 1 0 011.4 0l1.4 1.4a1 1 0 010 1.4l-.1.1a1 1 0 00-.2 1.1 1 1 0 00.9.6H20a1 1 0 011 1v2a1 1 0 01-1 1h-.2a1 1 0 00-.9.6z" />' },
+  { id: "gear", label: "Gear", body: '<path d="M8.6 3.5h6.8l.9 2.3 2.3.9v6.8l-2.3.9-.9 2.3H8.6l-.9-2.3-2.3-.9V6.7l2.3-.9z" /><circle cx="12" cy="10.1" r="2.4" />' },
+  { id: "settings", label: "Settings", body: '<path d="M8.6 3.5h6.8l.9 2.3 2.3.9v6.8l-2.3.9-.9 2.3H8.6l-.9-2.3-2.3-.9V6.7l2.3-.9z" /><circle cx="12" cy="10.1" r="2.4" />' },
   { id: "rocket", label: "Rocket", body: '<path d="M14 4l6 6-5.5 5.5-6-6z" /><path d="M8 16l-4 4M8.5 10.5L6 8l4-2 2.5 2.5M13.5 15.5L16 18l-2 4-2.5-2.5" />' },
   { id: "linkedin", label: "LinkedIn", body: '<path d="M7 9v8" /><path d="M7 6.5a.9.9 0 100 1.8.9.9 0 000-1.8z" /><path d="M11 17V9h3v1.2c.4-.8 1.3-1.4 2.7-1.4 2 0 3.3 1.3 3.3 4V17h-3v-3.8c0-1.2-.4-2-1.5-2-1 0-1.5.7-1.5 2V17z" />' },
   { id: "whatsapp", label: "WhatsApp", body: '<path d="M19.2 11.8a7.2 7.2 0 01-10.4 6.4L5 19l.8-3.6a7.2 7.2 0 1113.4-3.6z" /><path d="M9.5 8.8c.2-.4.4-.4.6-.4h.5c.2 0 .4 0 .6.4l.4 1.1c.1.2.1.4 0 .6l-.4.6a5.4 5.4 0 002.5 2.4l.6-.4c.2-.1.4-.1.6 0l1.1.4c.4.2.4.3.4.6v.5c0 .2 0 .4-.4.6-.6.3-1.3.4-1.9.2-1.7-.6-3.8-2.6-4.5-4.3-.3-.7-.2-1.4.2-2z" />' },
+  { id: "bitbucket", label: "Bitbucket", body: '<path d="M4 6h16l-2 12H6z" /><path d="M8 10h8l-1 5H9z" />' },
+  { id: "cloudflare", label: "Cloudflare", body: '<path d="M6 17h11a3.5 3.5 0 100-7 5 5 0 00-9.4-1.2A3.2 3.2 0 006 17z" /><path d="M8.4 17a2.2 2.2 0 014.3-.6A1.7 1.7 0 0114 17" />' },
+  { id: "digitalocean", label: "DigitalOcean", body: '<circle cx="12" cy="10.5" r="4.5" /><path d="M12 16v4M16.5 10.5H20M4 19.5h4" />' },
+  { id: "supabase", label: "Supabase", body: '<path d="M6 4h10l-6 16H4z" /><path d="M10 4h6L9 20" />' },
+  { id: "prisma", label: "Prisma", body: '<path d="M9 4l7 13-5 2-7-13z" /><path d="M9 4l-3 7 5 8" />' },
+  { id: "laravel", label: "Laravel", body: '<path d="M6 7l6-3 6 3v7l-6 3-6-3z" /><path d="M12 4v6l6 4M12 10l-6 4" />' },
+  { id: "django", label: "Django", body: '<rect x="4" y="5" width="16" height="14" rx="2" /><path d="M8 10v4M11 10v4M15 10v4M8 14h7" />' },
+  { id: "flask", label: "Flask", body: '<path d="M10 4h4M11 4v4l-5 8a2 2 0 001.7 3h8.6a2 2 0 001.7-3l-5-8V4" /><path d="M8 13h8" />' },
+  { id: "go", label: "Go", body: '<circle cx="9" cy="12" r="4" /><path d="M9 12h5" /><circle cx="17.8" cy="10.5" r="0.8" /><circle cx="17.8" cy="13.5" r="0.8" />' },
+  { id: "rust", label: "Rust", body: '<circle cx="12" cy="12" r="2.5" /><circle cx="12" cy="12" r="6.6" /><path d="M12 4.8v-1.3M12 20.5v-1.3M4.8 12H3.5M20.5 12h-1.3M6.9 6.9L6 6M18 18l-.9-.9M17.1 6.9L18 6M6.9 17.1L6 18" />' },
+  { id: "csharp", label: "C#", body: '<polygon points="12,3.6 18.6,7.3 18.6,14.7 12,18.4 5.4,14.7 5.4,7.3" /><path d="M10.3 10h3.4M10.3 14h3.4M14.8 10v4M16.4 10v4" />' },
+  { id: "php", label: "PHP", body: '<ellipse cx="12" cy="12" rx="8.5" ry="5.2" /><path d="M8 13v-3h1.7a1.2 1.2 0 010 2.4H8M12 13v-3h2M12 11.5h1.6M16 13v-3h1.7a1.2 1.2 0 010 2.4H16" />' },
+  { id: "java", label: "Java", body: '<path d="M8 17h8" /><path d="M9 14h6" /><path d="M10 9c0 1.7 4 1.7 4 3.4 0 .8-.8 1.4-2 1.6" /><path d="M13 6c.8.9.8 1.8 0 2.7" /><path d="M15 5c1.2 1.3 1.2 2.7 0 4" />' },
+  { id: "kotlin", label: "Kotlin", body: '<path d="M5 5h14l-7 7 7 7H5z" /><path d="M5 19l7-7-7-7" />' },
+  { id: "swift", label: "Swift", body: '<path d="M6 16c2.6 2.2 6.6 2.3 9.3.2 1.4 1 2.2 2 2.7 3-2-.8-3.4-.8-4.2.1-3 .8-5.9.3-8-1.6" /><path d="M8 7l4 4-2-5M12 8l4 4" />' },
+  { id: "angular", label: "Angular", body: '<path d="M12 3l7 2.6-1.1 9.2L12 21l-5.9-6.2L5 5.6z" /><path d="M12 7l-3.4 8h1.7l.8-2h2l.8 2h1.7z" />' },
+  { id: "vue", label: "Vue", body: '<path d="M4 6h4l4 7 4-7h4l-8 13z" /><path d="M7 6h3l2 3.5L14 6h3l-5 8z" />' },
+  { id: "svelte", label: "Svelte", body: '<path d="M15.8 6.4c-.8-1.8-3.5-2.5-5.8-1.9-2.3.6-3.8 2.2-3.4 3.8.3 1.4 1.7 2 3.8 2.5 2 .4 2.8.8 2.9 1.6.2.9-.8 1.8-2.3 2.2-1.5.4-3 .2-4.1-.6" /><path d="M16.8 13.6c.7 1.7-.7 3.8-3.4 4.6-2.7.8-5.6-.1-6.6-1.9" />' },
+  { id: "tailwind", label: "Tailwind", body: '<path d="M5 10.2c1.3-2.1 2.6-3 4-2.7 1 .2 1.8 1 2.6 2 .8 1 1.5 1.8 2.5 2 1.3.2 2.6-.6 4-2.7" /><path d="M3 16.2c1.3-2.1 2.6-3 4-2.7 1 .2 1.8 1 2.6 2 .8 1 1.5 1.8 2.5 2 1.3.2 2.6-.6 4-2.7" />' },
+  { id: "bootstrap", label: "Bootstrap", body: '<rect x="5" y="4.5" width="14" height="15" rx="3" /><path d="M9 9h4a2 2 0 010 4H9zM9 13h4.5a2 2 0 010 4H9z" />' },
+  { id: "npm", label: "npm", body: '<rect x="3.5" y="8" width="17" height="8" /><path d="M6.5 15v-5h2.2v3.4M10 10h3v5M13 12h2v3M16 10h1.8a1.6 1.6 0 010 3.2H16" />' },
+  { id: "yarn", label: "Yarn", body: '<circle cx="8.2" cy="8.2" r="2.2" /><circle cx="14.6" cy="8.8" r="2.2" /><circle cx="11.4" cy="14.8" r="2.2" /><path d="M9.9 9.1l3 4.8M10.2 8.4h2.3" />' },
+  { id: "pnpm", label: "pnpm", body: '<rect x="4" y="5" width="3.5" height="3.5" /><rect x="8.3" y="5" width="3.5" height="3.5" /><rect x="12.6" y="5" width="3.5" height="3.5" /><rect x="8.3" y="9.3" width="3.5" height="3.5" /><rect x="12.6" y="9.3" width="3.5" height="3.5" /><rect x="8.3" y="13.6" width="3.5" height="3.5" />' },
+  { id: "vite", label: "Vite", body: '<path d="M6 4l6 14 6-14-6 4z" /><path d="M9.5 9.5l2.5 1.7 2.5-1.7" />' },
+  { id: "webpack", label: "Webpack", body: '<path d="M12 3.8l7.2 4.1v8.2L12 20.2l-7.2-4.1V7.9z" /><path d="M12 3.8v8.2l7.2 4.1M12 12L4.8 7.9M12 20.2V12" />' },
+  { id: "babel", label: "Babel", body: '<rect x="4" y="6.5" width="16" height="11" rx="1.8" /><path d="M8 10h8M8 13.5h5" />' },
+  { id: "eslint", label: "ESLint", body: '<path d="M12 4l6.5 3.7v7.6L12 19l-6.5-3.7V7.7z" /><path d="M9 9h6v6H9z" />' },
+  { id: "github-actions", label: "GitHub Actions", body: '<circle cx="6.5" cy="7.5" r="1.4" /><circle cx="17.5" cy="7.5" r="1.4" /><circle cx="12" cy="16.5" r="1.4" /><path d="M7.7 8.5l3 6.1M16.3 8.5l-3 6.1M8 7.5h8" />' },
+  { id: "android", label: "Android", body: '<path d="M8 7h8a2 2 0 012 2v6H6V9a2 2 0 012-2z" /><path d="M9 7l-1.3-2M15 7l1.3-2M10 10h.01M14 10h.01M8 15v2M16 15v2" />' },
+  { id: "apple", label: "Apple", body: '<path d="M14.6 7.2c.7-.8 1.1-1.9 1-3.1-1 .1-2.1.7-2.8 1.5-.6.7-1.1 1.8-1 2.9 1 .1 2-.4 2.8-1.3z" /><path d="M16.8 12.3c0-2 1.6-3 1.7-3.1-.9-1.3-2.4-1.5-2.9-1.5-1.2-.1-2.4.7-3 .7-.7 0-1.6-.7-2.7-.6-1.4 0-2.7.8-3.4 2-.9 1.6-.2 4 1 5.7.6.8 1.3 1.8 2.2 1.8.9 0 1.2-.6 2.3-.6s1.3.6 2.3.6c1 0 1.6-.9 2.2-1.7.7-.9 1-1.9 1-2-.1 0-1.9-.8-1.9-3.3z" />' },
+  { id: "windows", label: "Windows", body: '<path d="M3 5l8-1v8H3zM13 3.8l8-1v9.2h-8zM3 13h8v8l-8-1zM13 13h8v9.2l-8-1z" />' },
+  { id: "ubuntu", label: "Ubuntu", body: '<circle cx="12" cy="12" r="5.2" /><circle cx="12" cy="4.6" r="1.1" /><circle cx="5.7" cy="15.8" r="1.1" /><circle cx="18.3" cy="15.8" r="1.1" /><path d="M12 6.8v2.5M7.6 14.9l2.2-1.3M16.4 14.9l-2.2-1.3" />' },
+  { id: "firebase", label: "Firebase", body: '<path d="M7.2 19.5l1.8-11.1 3 4.2-4.8 6.9z" /><path d="M12 12.6L9 8.4l2.4-4.2 5.4 9.5z" /><path d="M16.8 13.7L11.4 4.2l2.8-2.2 3.8 17.5z" />' },
+  { id: "heroku", label: "Heroku", body: '<rect x="6" y="4" width="12" height="16" rx="2" /><path d="M10 8v8M14 10v6M10 12h4" />' },
+  { id: "openai", label: "OpenAI", body: '<circle cx="12" cy="12" r="2.2" /><path d="M12 4.5a3.6 3.6 0 013.6 3.6v.2a3.6 3.6 0 01-3.6 3.6 3.6 3.6 0 01-3.6-3.6" /><path d="M6.2 7.8a3.6 3.6 0 015 .2l.2.2a3.6 3.6 0 01.1 5.1 3.6 3.6 0 01-5.1.1" /><path d="M7.2 16.7a3.6 3.6 0 01-.1-5.1l.1-.2a3.6 3.6 0 015-.1 3.6 3.6 0 01.2 5" /><path d="M16.8 16.2a3.6 3.6 0 01-5-.2l-.2-.2a3.6 3.6 0 01-.1-5.1 3.6 3.6 0 015.1-.1" /><path d="M17.8 7.3a3.6 3.6 0 01.1 5.1l-.1.2a3.6 3.6 0 01-5 .1 3.6 3.6 0 01-.2-5" /><path d="M8 4.2a3.6 3.6 0 015 .2l.2.2a3.6 3.6 0 01.1 5.1 3.6 3.6 0 01-5 .1" />' },
+  { id: "claude", label: "Claude", body: '<path d="M8 4h8a4 4 0 010 8H8a4 4 0 010-8z" /><path d="M8 12h8a4 4 0 010 8H8a4 4 0 010-8z" /><path d="M8 8h8M8 16h8" />' },
+  { id: "gemini", label: "Gemini", body: '<path d="M12 3l2.3 4.7L19 10l-4.7 2.3L12 17l-2.3-4.7L5 10l4.7-2.3z" /><path d="M12 7.2v5.6M9.2 10h5.6" />' },
+  { id: "cursor-ai", label: "Cursor", body: '<path d="M5 5h14v14H5z" /><path d="M9 9l6 3-6 3z" /><path d="M9 9v6" />' },
+  { id: "copilot", label: "Copilot", body: '<rect x="4" y="5" width="16" height="12" rx="3" /><circle cx="9" cy="11" r="1.2" /><circle cx="15" cy="11" r="1.2" /><path d="M8 15h8" />' },
+  { id: "windsurf", label: "Windsurf", body: '<path d="M4 15c2-2.3 4-3.5 6-3.5 2.7 0 4.5 2.1 6 4.5" /><path d="M5 10c1.6-1.7 3.2-2.6 4.8-2.6 2.1 0 3.7 1.5 5.2 3.3" /><path d="M6 6.5c1-.8 2-1.2 3-1.2 1.4 0 2.5.8 3.6 1.9" />' },
+  { id: "huggingface", label: "Hugging Face", body: '<circle cx="9" cy="11.5" r="4.2" /><circle cx="15" cy="11.5" r="4.2" /><circle cx="9" cy="11.5" r="0.8" /><circle cx="15" cy="11.5" r="0.8" /><path d="M8.3 14.6c1.2 1.1 2.3 1.6 3.7 1.6s2.5-.5 3.7-1.6" />' },
+  { id: "perplexity", label: "Perplexity", body: '<path d="M12 3l7 4v10l-7 4-7-4V7z" /><path d="M8 9h8M8 12h8M8 15h5" />' },
+  { id: "ollama", label: "Ollama", body: '<rect x="6" y="4.5" width="12" height="15" rx="4" /><circle cx="10" cy="11" r="1.1" /><circle cx="14" cy="11" r="1.1" /><path d="M9.5 14.3h5" />' },
+  { id: "langchain", label: "LangChain", body: '<path d="M6 7h6v6H6zM12 11h6v6h-6z" /><path d="M10 9l4 4" />' },
+  { id: "pinecone", label: "Pinecone", body: '<path d="M12 4c3 2.2 4.6 4.9 4.6 8.1 0 2.9-1.5 5.3-4.6 7.1-3.1-1.8-4.6-4.2-4.6-7.1 0-3.2 1.6-5.9 4.6-8.1z" /><path d="M12 7v10M9.6 10h4.8M9.6 13h4.8" />' },
+  { id: "qdrant", label: "Qdrant", body: '<circle cx="10" cy="10" r="5" /><path d="M13.5 13.5L18.5 18.5" /><circle cx="10" cy="10" r="1.2" />' },
+  { id: "milvus", label: "Milvus", body: '<path d="M4 18V6l4 4 4-6 4 6 4-4v12" /><path d="M8 18v-6M16 18v-6" />' },
+  { id: "datadog", label: "Datadog", body: '<path d="M5 15V9l4-3 4 2 4-2v9z" /><path d="M8 12h.01M12 11h.01M16 10h.01" />' },
+  { id: "grafana", label: "Grafana", body: '<circle cx="12" cy="12" r="6.5" /><path d="M12 12l5-2.2" /><circle cx="12" cy="12" r="1.4" /><path d="M8 7l1.5 2.2M16 8.5l-2 1.3M7 13h2.5" />' },
+  { id: "prometheus", label: "Prometheus", body: '<circle cx="12" cy="12" r="6.8" /><path d="M12 12l3.8-2.2" /><circle cx="12" cy="12" r="1.6" /><path d="M12 5v2M5 12h2M17 12h2M12 17v2" />' },
+  { id: "sentry", label: "Sentry", body: '<path d="M5 14c1.1-2.8 3.3-4.2 6.2-4.2 2.9 0 5 1.4 6.2 4.2" /><path d="M7 10.5c.5-2.1 2-3.2 4.2-3.2 2.1 0 3.6 1.1 4.2 3.2" /><path d="M12 13.2a2.2 2.2 0 110 4.4 2.2 2.2 0 010-4.4z" />' },
+  { id: "linear", label: "Linear", body: '<path d="M7 4v16M7 4h10M7 12h8M7 20h10" />' },
+  { id: "asana", label: "Asana", body: '<circle cx="8" cy="15" r="2.2" /><circle cx="12" cy="8.5" r="2.2" /><circle cx="16" cy="15" r="2.2" />' },
+  { id: "discord", label: "Discord", body: '<path d="M6 7.5c2.5-1 5.5-1 8 0l1.2 6.7c-2.2 1.6-4.2 2.1-6.2 2.1s-4-.5-6.2-2.1z" /><circle cx="9.4" cy="11.6" r="0.9" /><circle cx="14.6" cy="11.6" r="0.9" /><path d="M8.2 15c1.2.8 2.4 1.1 3.8 1.1s2.6-.3 3.8-1.1" />' },
+  { id: "reddit", label: "Reddit", body: '<circle cx="12" cy="12.5" r="5.2" /><circle cx="9.8" cy="12.3" r="0.8" /><circle cx="14.2" cy="12.3" r="0.8" /><path d="M9.6 14.8c.8.6 1.6.9 2.4.9s1.6-.3 2.4-.9" /><path d="M13.2 8.7l2.8.8" /><circle cx="17.2" cy="10.1" r="1" />' },
+  { id: "tiktok", label: "TikTok", body: '<path d="M14 5v7.5a3.5 3.5 0 11-3.5-3.5" /><path d="M14 5c.7 1.8 2 2.8 4 3" />' },
+  { id: "railway", label: "Railway", body: '<path d="M5 18V6h2.6l2.2 3.3L12 6h2.8v12" /><path d="M5 14h10" />' },
+  { id: "render", label: "Render", body: '<path d="M5 5h6a4 4 0 010 8H5z" /><path d="M11 13l4 6" />' },
+  { id: "flyio", label: "Fly.io", body: '<path d="M4 14l8-9 8 9" /><path d="M7 14l5-5 5 5" /><path d="M10 14l2-2 2 2" />' },
+  { id: "coolify", label: "Coolify", body: '<path d="M5 6h14l-7 12z" /><path d="M12 6v12" />' },
+  { id: "chat", label: "Chat", body: '<path d="M4 6.5A2.5 2.5 0 016.5 4h11A2.5 2.5 0 0120 6.5v7A2.5 2.5 0 0117.5 16H11l-4 4v-4H6.5A2.5 2.5 0 014 13.5z" /><path d="M8 9.5h8M8 12.5h5" />' },
+  { id: "obsidian", label: "Obsidian", body: '<path d="M12 3l6.5 4.2-1.2 9.3L12 21l-5.3-4.5-1.2-9.3z" /><path d="M9 9l3 9 3-9-3-3z" />' },
+  { id: "stackoverflow", label: "Stack Overflow", body: '<path d="M7 18h10M8.2 15.8h7.6M8.8 13.6l7 1.4M10 11.3l6.2 2.2M11.7 9.2l5.1 3M14 7.5l3.3 4.1" /><path d="M6 9v9h12V9" />' },
+  { id: "medium", label: "Medium", body: '<ellipse cx="8" cy="12" rx="3" ry="5" /><ellipse cx="13.8" cy="12" rx="2" ry="4" /><ellipse cx="18" cy="12" rx="1.2" ry="3" />' },
+  { id: "devto", label: "DEV.to", body: '<rect x="4" y="6" width="16" height="12" rx="2" /><path d="M7.5 10v4M9.5 10h1.8a2 2 0 010 4H9.5M13 10l1.4 4 1.4-4M17 10h2.3M17 12h2" />' },
+  { id: "chrome", label: "Chrome", body: '<circle cx="12" cy="12" r="3.2" /><path d="M12 3a9 9 0 017.8 4.5H12" /><path d="M4.2 7.5A9 9 0 0112 3l3.8 6.5" /><path d="M8.2 19.8A9 9 0 014.2 7.5h7.6" /><path d="M15.8 19.8a9 9 0 01-7.6 0l3.8-6.5" /><path d="M19.8 7.5a9 9 0 01-4 12.3l-3.8-6.5" />' },
+  { id: "safari", label: "Safari", body: '<circle cx="12" cy="12" r="8.7" /><path d="M12 6.2v5.8l4.5 2.6" /><path d="M14.8 9.2l1.7-3.4-3.4 1.7z" />' },
+  { id: "edge", label: "Edge", body: '<path d="M5.2 14.8c0-3.7 2.8-6.6 6.4-6.6 2.9 0 5 1.8 5.7 4.3-1-.9-2.4-1.3-3.9-1.3-2.5 0-4.6 1.2-5.8 3.6-.7 1.3-.7 2.5-.5 3.4-1.2-.7-1.9-1.8-1.9-3.4z" /><path d="M18.2 13.5c-.6 2.8-2.9 4.7-5.8 4.7-3.6 0-6.5-2.6-6.5-5.8 0-.6.1-1.2.3-1.8.8 1.9 2.9 3.1 5.7 3.1 2.2 0 4.5-.1 6.3-.2z" />' },
+  { id: "brave", label: "Brave", body: '<path d="M7 5l5-2 5 2 2 4-2 8-5 4-5-4-2-8z" /><path d="M9.2 10.2l1.1 3h3.4l1.1-3M10 9h4" />' },
+  { id: "stripe", label: "Stripe", body: '<path d="M6 10.2c0-1.7 1.4-2.8 3.6-2.8 1.1 0 2.3.2 3.6.8v2.2a6.3 6.3 0 00-3-.8c-.9 0-1.3.3-1.3.7 0 .5.6.7 1.6 1 1.6.4 3.6.9 3.6 3.1 0 1.8-1.4 2.9-3.7 2.9-1.4 0-2.8-.3-4-.9V14a8 8 0 003.8 1.1c.9 0 1.3-.3 1.3-.8 0-.5-.6-.7-1.5-1-1.7-.4-4-.9-4-3.1z" />' },
+  { id: "paypal", label: "PayPal", body: '<path d="M8 6h5a3 3 0 010 6H9.7L9 16H6.5L8 6z" /><path d="M11 8h4a2.6 2.6 0 010 5.2h-3.1l-.5 2.8H8.8" />' },
+  { id: "shield", label: "Shield", body: '<path d="M12 3l7 3v5.8c0 4.3-2.7 7.6-7 9.2-4.3-1.6-7-4.9-7-9.2V6z" /><path d="M9 12l2 2 4-4" />' },
+  { id: "key", label: "Key", body: '<circle cx="8.2" cy="11.8" r="3.2" /><path d="M11.4 11.8H20M16 11.8v2M18.4 11.8v2" />' },
+  { id: "camera", label: "Camera", body: '<rect x="4" y="7" width="16" height="11" rx="2" /><path d="M8 7l1.4-2h5.2L16 7" /><circle cx="12" cy="12.5" r="2.7" />' },
+  { id: "image", label: "Image", body: '<rect x="3.5" y="4" width="17" height="14" rx="2" /><path d="M6 14l3.1-3.5 2.9 2.9 2.4-2.4 3.6 3.7" /><circle cx="8.2" cy="8.3" r="1" />' },
+  { id: "file-code", label: "File Code", body: '<path d="M7 4h7l4 4v12H7z" /><path d="M14 4v4h4" /><path d="M10.2 13l-1.7 1.7 1.7 1.7M13.8 13l1.7 1.7-1.7 1.7" />' },
+  { id: "clipboard", label: "Clipboard", body: '<rect x="6" y="5" width="12" height="15" rx="2" /><rect x="9" y="3" width="6" height="3.5" rx="1.2" /><path d="M9 11h6M9 14h6M9 17h4" />' },
   { id: "rss", label: "RSS", body: '<path d="M6 18a2 2 0 100-4 2 2 0 000 4z" /><path d="M4 11a9 9 0 019 9" /><path d="M4 6a14 14 0 0114 14" />' }
 ];
 
@@ -78,7 +156,17 @@ const iconMap = new Map(iconLibrary.map((icon) => [icon.id, icon]));
 
 export const getIconById = (id: string): IconDefinition | null => iconMap.get(id) ?? null;
 
+const escapeHtml = (value: string): string =>
+  value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+
 export const buildIconSvg = (icon: IconDefinition, className = "md-inline-icon", title?: string): string => {
-  const safeTitle = title ? `<title>${title}</title>` : "";
-  return `<svg class="${className}" viewBox="0 0 24 24" role="img" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${safeTitle}${icon.body}</svg>`;
+  const safeTitle = title ? `<title>${escapeHtml(title)}</title>` : "";
+  const ariaHidden = title ? "false" : "true";
+  const role = title ? "img" : "presentation";
+  return `<svg class="${className}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="${role}" aria-hidden="${ariaHidden}" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" preserveAspectRatio="xMidYMid meet" focusable="false">${safeTitle}${icon.body}</svg>`;
 };

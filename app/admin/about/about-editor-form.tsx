@@ -36,7 +36,6 @@ export default function AboutEditorForm({
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
   const [activeField, setActiveField] = useState<ActiveField>("about");
-  const [showFormatting, setShowFormatting] = useState(false);
   const [showIcons, setShowIcons] = useState(false);
   const aboutRef = useRef<HTMLTextAreaElement>(null);
   const whoRef = useRef<HTMLTextAreaElement>(null);
@@ -204,94 +203,89 @@ export default function AboutEditorForm({
             </label>
           </div>
 
-          <div className="editor-tools-row">
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={() => setShowFormatting((value) => !value)}
-              aria-expanded={showFormatting}
-            >
-              Форматирование
-            </button>
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={() => setShowIcons((value) => !value)}
-              aria-expanded={showIcons}
-            >
-              Иконки
-            </button>
-          </div>
-
-          {showFormatting && (
-            <section className="panel formatting-panel">
-              <div className="formatting-quick-actions">
-                <button type="button" className="color-btn" onClick={() => wrapSelection("**")}>
-                  Bold
-                </button>
-                <button type="button" className="color-btn" onClick={() => wrapSelection("*")}>
-                  Italic
-                </button>
-                <button type="button" className="color-btn" onClick={() => wrapSelection("<u>", "</u>")}>
-                  Underline
-                </button>
-                <button type="button" className="color-btn" onClick={() => wrapSelection("~~")}>
-                  Strike
-                </button>
-                <button type="button" className="color-btn" onClick={() => wrapSelection("[", "](https://example.com)")}>
-                  Link
-                </button>
+          <section className="panel formatting-panel" aria-label="Форматирование">
+            <div className="comment-toolbar admin-markdown-toolbar">
+              <button type="button" className="comment-tool-btn comment-tool-icon" onClick={() => wrapSelection("**")} aria-label="Жирный" title="Жирный">
+                <strong>B</strong>
+              </button>
+              <button type="button" className="comment-tool-btn comment-tool-icon" onClick={() => wrapSelection("*")} aria-label="Курсив" title="Курсив">
+                <em>I</em>
+              </button>
+              <button type="button" className="comment-tool-btn comment-tool-icon" onClick={() => wrapSelection("<u>", "</u>")} aria-label="Подчеркнутый" title="Подчеркнутый">
+                <span className="comment-tool-underline">U</span>
+              </button>
+              <button type="button" className="comment-tool-btn comment-tool-icon" onClick={() => wrapSelection("~~")} aria-label="Зачеркнутый" title="Зачеркнутый">
+                <span className="comment-tool-strike">S</span>
+              </button>
+              <button type="button" className="comment-tool-btn comment-tool-icon" onClick={() => wrapSelection("`")} aria-label="Встроенный код" title="Встроенный код">
+                <span className="comment-tool-code">&lt;/&gt;</span>
+              </button>
+              <button type="button" className="comment-tool-btn comment-tool-icon" onClick={() => wrapSelection("```ts\n", "\n```")} aria-label="Блок кода" title="Блок кода">
+                <svg viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M1.5 3.5h13M1.5 8h13M1.5 12.5h13" />
+                  <path d="M5.2 3.5v9M10.8 3.5v9" />
+                </svg>
+              </button>
+              <button type="button" className="comment-tool-btn comment-tool-icon" onClick={() => wrapSelection("[", "](https://example.com)")} aria-label="Ссылка" title="Ссылка">
+                <svg viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M6.2 9.8l3.6-3.6" />
+                  <path d="M5 11L3.9 12a2.3 2.3 0 01-3.2-3.2L1.8 7.7" />
+                  <path d="M11 5l1.1-1.1a2.3 2.3 0 113.2 3.2L14.2 8.2" />
+                </svg>
+              </button>
+              <button type="button" className="comment-tool-btn comment-tool-icon" onClick={() => insertSnippet("| Колонка 1 | Колонка 2 |\n| --- | --- |\n| Значение | Значение |\n", true)} aria-label="Таблица" title="Таблица">
+                <svg viewBox="0 0 16 16" aria-hidden="true">
+                  <rect x="1.5" y="2.5" width="13" height="11" rx="1.5" />
+                  <path d="M1.5 6.5h13M1.5 10h13M6 2.5v11M10 2.5v11" />
+                </svg>
+              </button>
+              <button type="button" className="comment-tool-btn comment-tool-icon" onClick={() => insertSnippet("> Цитата\n", true)} aria-label="Цитата" title="Цитата">
+                <svg viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M3 4h4v4H3zM9 4h4v4H9z" />
+                  <path d="M4 8v2.4C4 11.8 3.1 13 1.8 13M10 8v2.4c0 1.4-.9 2.6-2.2 2.6" />
+                </svg>
+              </button>
+              <button type="button" className="comment-tool-btn comment-tool-icon" onClick={() => insertSnippet("> [!INFO] Заголовок\n>\n> Текст уведомления\n", true)} aria-label="Info callout" title="Info callout">
+                <span className="admin-tool-badge">i</span>
+              </button>
+              <button type="button" className="comment-tool-btn comment-tool-icon" onClick={() => insertSnippet("> [!WARN] Заголовок\n>\n> Текст предупреждения\n", true)} aria-label="Warn callout" title="Warn callout">
+                <span className="admin-tool-badge">!</span>
+              </button>
+              <button type="button" className="comment-tool-btn comment-tool-icon" onClick={() => insertSnippet("> [!DANGER] Заголовок\n>\n> Текст важного предупреждения\n", true)} aria-label="Danger callout" title="Danger callout">
+                <span className="admin-tool-badge">x</span>
+              </button>
+              <button type="button" className="comment-tool-btn comment-tool-icon" onClick={() => insertSnippet("> [!CALLOUT] Заголовок\n>\n> Дополнительная заметка\n", true)} aria-label="Callout" title="Callout">
+                <span className="admin-tool-badge">*</span>
+              </button>
+              <button
+                type="button"
+                className="comment-tool-btn comment-tool-icon"
+                onClick={() => setShowIcons((value) => !value)}
+                aria-expanded={showIcons}
+                aria-label="Панель иконок"
+                title="Панель иконок"
+              >
+                <svg viewBox="0 0 16 16" aria-hidden="true">
+                  <circle cx="8" cy="8" r="5.5" />
+                  <circle cx="6.1" cy="6.8" r="0.55" />
+                  <circle cx="9.9" cy="6.8" r="0.55" />
+                  <path d="M5.6 9.7c.5.8 1.4 1.3 2.4 1.3s1.9-.5 2.4-1.3" />
+                </svg>
+              </button>
+              {colorOptions.map((color) => (
                 <button
+                  key={color.id}
                   type="button"
-                  className="color-btn"
-                  onClick={() => insertSnippet("| Колонка 1 | Колонка 2 |\n| --- | --- |\n| Значение | Значение |\n", true)}
+                  className={`comment-tool-btn comment-tool-icon comment-color-btn color-${color.id}`}
+                  onClick={() => applyColor(color.id)}
+                  aria-label={`Цвет: ${color.label}`}
+                  title={`Цвет: ${color.label}`}
                 >
-                  Table
+                  <span className="comment-color-dot" />
                 </button>
-                <button type="button" className="color-btn" onClick={() => insertSnippet("> Цитата\n", true)}>
-                  Quote
-                </button>
-                <button type="button" className="color-btn" onClick={() => insertSnippet("> [!INFO] Заголовок\n>\n> Текст уведомления\n", true)}>
-                  Info
-                </button>
-                <button type="button" className="color-btn" onClick={() => insertSnippet("> [!WARN] Заголовок\n>\n> Текст предупреждения\n", true)}>
-                  Warn
-                </button>
-                <button
-                  type="button"
-                  className="color-btn"
-                  onClick={() => insertSnippet("> [!DANGER] Заголовок\n>\n> Текст важного предупреждения\n", true)}
-                >
-                  Danger
-                </button>
-                <button
-                  type="button"
-                  className="color-btn"
-                  onClick={() => insertSnippet("> [!CALLOUT] Заголовок\n>\n> Дополнительная заметка\n", true)}
-                >
-                  Callout
-                </button>
-              </div>
-              <div className="color-toolbar">
-                {colorOptions.map((color) => (
-                  <button
-                    key={color.id}
-                    type="button"
-                    className={`color-btn color-${color.id}`}
-                    onClick={() => applyColor(color.id)}
-                  >
-                    {color.label}
-                  </button>
-                ))}
-              </div>
-              <p className="hint">
-                Работает для активного поля (по фокусу). Хоткеи: <code>Cmd/Ctrl+B</code>, <code>Cmd/Ctrl+I</code>,{" "}
-                <code>Cmd/Ctrl+U</code>, <code>Cmd/Ctrl+~</code>, <code>Cmd/Ctrl+K</code>, <code>Cmd/Ctrl+Z</code>.
-                Цвет: <code>{"{{green|текст}}"}</code>, иконка: <code>{"{{icon:github}}"}</code>. Callout:{" "}
-                <code>{"> [!WARN] Заголовок\n>\n> текст"}</code>.
-              </p>
-            </section>
-          )}
+              ))}
+            </div>
+          </section>
 
           {showIcons && <IconPicker onInsert={insertSnippet} className="panel icon-picker-panel-inline" />}
 

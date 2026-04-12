@@ -1,9 +1,6 @@
-import fs from "node:fs";
 import path from "node:path";
-import matter from "gray-matter";
 
 const dbPath = path.join(process.cwd(), "rblog.db");
-const postsDir = path.join(process.cwd(), "content", "posts");
 const defaultAboutTitle = "About";
 const defaultWhoTitle = "Кто я";
 const defaultAboutSection = "Коротко о блоге и о чем здесь публикуются материалы.";
@@ -36,8 +33,6 @@ const loadBetterSqlite = (): new (filename: string) => SqliteDatabase => {
     );
   }
 };
-
-const estimateReadingExcerpt = (content: string): string => content.replace(/\s+/g, " ").trim().slice(0, 180);
 
 type TableInfoRow = {
   name: string;
@@ -131,6 +126,16 @@ const initSchema = (db: SqliteDatabase) => {
     );
 
     CREATE INDEX IF NOT EXISTS idx_admin_login_attempts_updated_at ON admin_login_attempts(updated_at DESC);
+
+    CREATE TABLE IF NOT EXISTS admin_image_upload_limits (
+      key TEXT PRIMARY KEY,
+      window_started_at INTEGER NOT NULL,
+      upload_count INTEGER NOT NULL,
+      uploaded_bytes INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_admin_image_upload_limits_updated_at ON admin_image_upload_limits(updated_at DESC);
 
     CREATE TABLE IF NOT EXISTS resources (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -280,56 +285,6 @@ const seedSiteContent = (db: SqliteDatabase) => {
   ).run("ad_markdown", defaultAdMarkdown, now);
 };
 
-const migrateMarkdownIfNeeded = (db: SqliteDatabase) => {
-  const row = db.prepare("SELECT COUNT(*) as count FROM posts").get() as { count: number };
-  if (row.count > 0) {
-    return;
-  }
-  if (!fs.existsSync(postsDir)) {
-    return;
-  }
-
-  const files = fs
-    .readdirSync(postsDir, { withFileTypes: true })
-    .filter((entry) => entry.isFile() && entry.name.endsWith(".md"));
-
-  if (files.length === 0) {
-    return;
-  }
-
-  const insert = db.prepare(`
-    INSERT OR IGNORE INTO posts (slug, title, excerpt, content, published_at, created_at, updated_at)
-    VALUES (@slug, @title, @excerpt, @content, @publishedAt, @createdAt, @updatedAt)
-  `);
-
-  const now = new Date().toISOString();
-
-  for (const file of files) {
-    const filePath = path.join(postsDir, file.name);
-    const raw = fs.readFileSync(filePath, "utf8");
-    const parsed = matter(raw);
-    const slug = file.name.replace(/\.md$/, "").toLowerCase();
-    const title = typeof parsed.data.title === "string" ? parsed.data.title : slug;
-    const excerpt =
-      typeof parsed.data.excerpt === "string" && parsed.data.excerpt.trim().length > 0
-        ? parsed.data.excerpt
-        : estimateReadingExcerpt(parsed.content);
-    const publishedAt =
-      typeof parsed.data.date === "string" && parsed.data.date.trim().length > 0
-        ? parsed.data.date
-        : now.slice(0, 10);
-    insert.run({
-      slug,
-      title,
-      excerpt,
-      content: parsed.content,
-      publishedAt,
-      createdAt: now,
-      updatedAt: now
-    });
-  }
-};
-
 export const getDb = (): SqliteDatabase => {
   if (!dbInstance) {
     const DatabaseCtor = loadBetterSqlite();
@@ -339,7 +294,6 @@ export const getDb = (): SqliteDatabase => {
     initSchema(dbInstance);
     migrateLegacySchemaIfNeeded(dbInstance);
     seedSiteContent(dbInstance);
-    migrateMarkdownIfNeeded(dbInstance);
   }
   return dbInstance;
 };

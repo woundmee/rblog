@@ -1,7 +1,7 @@
 "use client";
 
-import { Children, createElement, isValidElement, type ReactElement, type ReactNode, useEffect, useMemo, useState } from "react";
-import ReactMarkdown from "react-markdown";
+import { Children, createElement, isValidElement, type CSSProperties, type ReactElement, type ReactNode, useEffect, useMemo, useState } from "react";
+import ReactMarkdown, { type Options as ReactMarkdownOptions } from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
@@ -12,6 +12,7 @@ import { buildHeadingId } from "@/lib/markdown-headings";
 type MarkdownRendererProps = {
   markdown: string;
   className?: string;
+  allowRawHtml?: boolean;
 };
 
 const normalizeLinkHref = (value: string): string => {
@@ -28,9 +29,77 @@ const normalizeLinkHref = (value: string): string => {
   return href;
 };
 
+const normalizeImageSrc = (value: string): string => {
+  const src = value.trim();
+  if (src.length === 0) {
+    return src;
+  }
+  if (/^(https?:|data:image\/|\/)/i.test(src)) {
+    return src;
+  }
+  if (/^[\w.-]+\.[a-z]{2,}([/:?#].*)?$/i.test(src)) {
+    return `https://${src}`;
+  }
+  return src;
+};
+
+const normalizeImageSize = (value: string): string | null => {
+  const raw = value.trim();
+  if (!raw) {
+    return null;
+  }
+  const number = Number.parseInt(raw, 10);
+  if (!Number.isFinite(number)) {
+    return null;
+  }
+  const clamped = Math.min(2400, Math.max(24, number));
+  return `${clamped}px`;
+};
+
+type ParsedImageMeta = {
+  alt: string;
+  title?: string;
+  width?: string;
+};
+
+const parseImageMeta = (rawAlt: string, rawTitle?: string): ParsedImageMeta => {
+  const title = rawTitle?.trim() || undefined;
+  const trimmedAlt = rawAlt.trim();
+  const match = trimmedAlt.match(/^(.*)\|\s*(\d{1,4})\s*$/);
+  if (!match) {
+    return {
+      alt: trimmedAlt || "image",
+      title
+    };
+  }
+
+  const width = normalizeImageSize(match[2] ?? "");
+  if (!width) {
+    return {
+      alt: trimmedAlt || "image",
+      title
+    };
+  }
+
+  return {
+    alt: (match[1] ?? "").trim() || "image",
+    title,
+    width
+  };
+};
+
+const normalizeInlineImageShortcut = (value: string): string => {
+  return value.replace(/(^|[\s>])(!?)\[([^\]\n|][^\]\n]*?)\|(\d{1,4})\]\(([^)\s]+)\)/gm, (full, prefix: string, bang: string, alt: string, size: string, href: string) => {
+    if (bang === "!") {
+      return full;
+    }
+    return `${prefix}![${alt.trim()}|${size}](${href})`;
+  });
+};
+
 const sanitizeSchema = {
   ...defaultSchema,
-  tagNames: [...(defaultSchema.tagNames ?? []), "span", "svg", "path", "title", "u"],
+  tagNames: [...(defaultSchema.tagNames ?? []), "span", "svg", "path", "title", "u", "img", "circle", "rect", "ellipse", "polygon", "polyline", "line", "g"],
   attributes: {
     ...defaultSchema.attributes,
     span: [...(defaultSchema.attributes?.span ?? []), ["className", /^md-color-(blue|green|orange|red|purple)$/]],
@@ -48,7 +117,15 @@ const sanitizeSchema = {
       "stroke-linejoin"
     ],
     path: [...(defaultSchema.attributes?.path ?? []), "d"],
-    title: [...(defaultSchema.attributes?.title ?? [])]
+    title: [...(defaultSchema.attributes?.title ?? [])],
+    g: [...(defaultSchema.attributes?.g ?? []), "fill", "stroke", "stroke-width", "stroke-linecap", "stroke-linejoin"],
+    circle: [...(defaultSchema.attributes?.circle ?? []), "cx", "cy", "r", "fill", "stroke", "stroke-width"],
+    rect: [...(defaultSchema.attributes?.rect ?? []), "x", "y", "width", "height", "rx", "ry", "fill", "stroke", "stroke-width"],
+    ellipse: [...(defaultSchema.attributes?.ellipse ?? []), "cx", "cy", "rx", "ry", "fill", "stroke", "stroke-width"],
+    polygon: [...(defaultSchema.attributes?.polygon ?? []), "points", "fill", "stroke", "stroke-width", "stroke-linecap", "stroke-linejoin"],
+    polyline: [...(defaultSchema.attributes?.polyline ?? []), "points", "fill", "stroke", "stroke-width", "stroke-linecap", "stroke-linejoin"],
+    line: [...(defaultSchema.attributes?.line ?? []), "x1", "y1", "x2", "y2", "stroke", "stroke-width", "stroke-linecap", "stroke-linejoin"],
+    img: [...(defaultSchema.attributes?.img ?? []), "src", "alt", "title", "width", "height", "loading", "decoding"]
   }
 };
 
@@ -172,12 +249,15 @@ function EnhancedPre({ children }: { children?: ReactNode }) {
   );
 }
 
-export default function MarkdownRenderer({ markdown, className }: MarkdownRendererProps) {
-  const normalized = markdown
+export default function MarkdownRenderer({ markdown, className, allowRawHtml = true }: MarkdownRendererProps) {
+  const normalized = normalizeInlineImageShortcut(markdown)
     .replace(/```c#/gi, "```csharp")
     .replace(/```js\b/gi, "```javascript")
     .replace(/```ts\b/gi, "```typescript");
-  const transformed = applyColorTokens(normalized);
+  const transformed = allowRawHtml ? applyColorTokens(normalized) : normalized;
+  const rehypePlugins = (allowRawHtml
+    ? [rehypeRaw, [rehypeSanitize, sanitizeSchema], rehypeHighlight]
+    : [[rehypeSanitize, sanitizeSchema], rehypeHighlight]) as NonNullable<ReactMarkdownOptions["rehypePlugins"]>;
   const createHeading = (tag: "h1" | "h2" | "h3" | "h4" | "h5" | "h6") => {
     return ({ children, node }: { children?: ReactNode; node?: { position?: { start?: { line?: number } } } }) => {
       const plainText = flattenText(children).replace(/\s+/g, " ").trim();
@@ -191,7 +271,7 @@ export default function MarkdownRenderer({ markdown, className }: MarkdownRender
     <div className={className}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema], rehypeHighlight]}
+        rehypePlugins={rehypePlugins}
         components={{
           a: ({ href, children }) => {
             const rawHref = typeof href === "string" ? href : "";
@@ -201,6 +281,32 @@ export default function MarkdownRenderer({ markdown, className }: MarkdownRender
               <a href={normalizedHref}>
                 {children}
               </a>
+            );
+          },
+          img: ({ src, alt, title }) => {
+            const rawSrc = typeof src === "string" ? src : "";
+            const normalizedSrc = normalizeImageSrc(rawSrc);
+            if (!normalizedSrc) {
+              return null;
+            }
+            const parsed = parseImageMeta(typeof alt === "string" ? alt : "", typeof title === "string" ? title : undefined);
+            const style: CSSProperties | undefined = parsed.width
+              ? {
+                  width: parsed.width,
+                  height: "auto",
+                  maxWidth: "100%"
+                }
+              : undefined;
+
+            return (
+              <img
+                src={normalizedSrc}
+                alt={parsed.alt}
+                title={parsed.title}
+                loading="lazy"
+                decoding="async"
+                style={style}
+              />
             );
           },
           h1: createHeading("h1"),

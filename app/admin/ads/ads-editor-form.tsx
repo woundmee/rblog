@@ -25,7 +25,6 @@ export default function AdsEditorForm({ initialEnabled, initialMarkdown }: AdsEd
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
-  const [showFormatting, setShowFormatting] = useState(false);
   const editorRef = useRef<HTMLTextAreaElement>(null);
 
   const wrapSelection = (prefix: string, suffix?: string) => {
@@ -133,6 +132,8 @@ export default function AdsEditorForm({ initialEnabled, initialMarkdown }: AdsEd
     }
   };
 
+  const previewMarkdown = markdown.trim().length > 0 ? normalizeMarkdownLinks(markdown) : "_Пусто_";
+
   return (
     <div className="editor-grid editor-grid-single">
       <section className="panel editor-panel">
@@ -147,50 +148,55 @@ export default function AdsEditorForm({ initialEnabled, initialMarkdown }: AdsEd
             <span>Показывать рекламный блок</span>
           </label>
 
-          <div className="editor-tools-row">
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={() => setShowFormatting((value) => !value)}
-              aria-expanded={showFormatting}
-            >
-              Форматирование
-            </button>
-          </div>
-
-          {showFormatting && (
-            <section className="panel formatting-panel">
-              <div className="formatting-quick-actions">
-                <button type="button" className="color-btn" onClick={() => wrapSelection("**")}>
-                  Bold
+          <section className="panel formatting-panel" aria-label="Форматирование">
+            <div className="comment-toolbar admin-markdown-toolbar">
+              <button type="button" className="comment-tool-btn comment-tool-icon" onClick={() => wrapSelection("**")} aria-label="Жирный" title="Жирный">
+                <strong>B</strong>
+              </button>
+              <button type="button" className="comment-tool-btn comment-tool-icon" onClick={() => wrapSelection("*")} aria-label="Курсив" title="Курсив">
+                <em>I</em>
+              </button>
+              <button type="button" className="comment-tool-btn comment-tool-icon" onClick={() => wrapSelection("<u>", "</u>")} aria-label="Подчеркнутый" title="Подчеркнутый">
+                <span className="comment-tool-underline">U</span>
+              </button>
+              <button type="button" className="comment-tool-btn comment-tool-icon" onClick={() => wrapSelection("~~")} aria-label="Зачеркнутый" title="Зачеркнутый">
+                <span className="comment-tool-strike">S</span>
+              </button>
+              <button type="button" className="comment-tool-btn comment-tool-icon" onClick={() => wrapSelection("`")} aria-label="Встроенный код" title="Встроенный код">
+                <span className="comment-tool-code">&lt;/&gt;</span>
+              </button>
+              <button type="button" className="comment-tool-btn comment-tool-icon" onClick={() => wrapSelection("```ts\n", "\n```")} aria-label="Блок кода" title="Блок кода">
+                <svg viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M1.5 3.5h13M1.5 8h13M1.5 12.5h13" />
+                  <path d="M5.2 3.5v9M10.8 3.5v9" />
+                </svg>
+              </button>
+              <button type="button" className="comment-tool-btn comment-tool-icon" onClick={() => wrapSelection("[", "](https://example.com)")} aria-label="Ссылка" title="Ссылка">
+                <svg viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M6.2 9.8l3.6-3.6" />
+                  <path d="M5 11L3.9 12a2.3 2.3 0 01-3.2-3.2L1.8 7.7" />
+                  <path d="M11 5l1.1-1.1a2.3 2.3 0 113.2 3.2L14.2 8.2" />
+                </svg>
+              </button>
+              <button type="button" className="comment-tool-btn comment-tool-icon" onClick={() => insertSnippet("###### Заголовок\nТекст рекламы\n")} aria-label="Шаблон" title="Шаблон">
+                <svg viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M2.5 3.5h11M2.5 7h11M2.5 10.5h7.2M2.5 13h5.2" />
+                </svg>
+              </button>
+              {colorOptions.map((color) => (
+                <button
+                  key={color.id}
+                  type="button"
+                  className={`comment-tool-btn comment-tool-icon comment-color-btn color-${color.id}`}
+                  onClick={() => applyColor(color.id)}
+                  aria-label={`Цвет: ${color.label}`}
+                  title={`Цвет: ${color.label}`}
+                >
+                  <span className="comment-color-dot" />
                 </button>
-                <button type="button" className="color-btn" onClick={() => wrapSelection("*")}>
-                  Italic
-                </button>
-                <button type="button" className="color-btn" onClick={() => wrapSelection("<u>", "</u>")}>
-                  Underline
-                </button>
-                <button type="button" className="color-btn" onClick={() => wrapSelection("[", "](https://example.com)")}>
-                  Link
-                </button>
-                <button type="button" className="color-btn" onClick={() => insertSnippet("###### Заголовок\nТекст рекламы\n")}>
-                  Template
-                </button>
-              </div>
-              <div className="color-toolbar">
-                {colorOptions.map((color) => (
-                  <button
-                    key={color.id}
-                    type="button"
-                    className={`color-btn color-${color.id}`}
-                    onClick={() => applyColor(color.id)}
-                  >
-                    {color.label}
-                  </button>
-                ))}
-              </div>
-            </section>
-          )}
+              ))}
+            </div>
+          </section>
 
           <label className="field">
             <span>Markdown (рекомендуется: короткий заголовок + одна строка текста)</span>
@@ -216,19 +222,13 @@ export default function AdsEditorForm({ initialEnabled, initialMarkdown }: AdsEd
         <header className="section-head section-head-compact">
           <h2>Превью</h2>
         </header>
-        <div className="about-preview-stack">
-          <section className="about-preview-item">
-            <h3>Блок под navbar</h3>
-            {enabled ? (
-              <MarkdownRenderer
-                markdown={markdown.trim().length > 0 ? normalizeMarkdownLinks(markdown) : "_Пусто_"}
-                className="markdown-body ad-preview-markdown"
-              />
-            ) : (
-              <p className="section-note">Скрыт (не показывается на сайте).</p>
-            )}
-          </section>
-        </div>
+        {enabled ? (
+          <aside className="ad-banner ad-preview-banner">
+            <MarkdownRenderer markdown={previewMarkdown} className="markdown-body ad-banner-markdown ad-preview-markdown" />
+          </aside>
+        ) : (
+          <p className="section-note">Скрыт (не показывается на сайте).</p>
+        )}
       </section>
     </div>
   );

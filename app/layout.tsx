@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     locale: "ru_RU",
     siteName: "rblog",
     url: siteUrl,
-    title: "rblog",
+    title: "IT-блог о разработке",
     description: "IT-блог о разработке",
     images: [
       {
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "rblog",
+    title: "IT-блог о разработке",
     description: "IT-блог о разработке",
     images: ["/twitter-image"]
   },
@@ -63,7 +63,9 @@ export default function RootLayout({
           </Suspense>
           <main className="content-area">{children}</main>
           <footer className="site-footer" aria-label="Footer">
-            <p>© rblog</p>
+            <p>
+              © <Link href="/">rblog</Link>
+            </p>
             <nav className="site-footer-nav" aria-label="Footer links">
               <Link href="/">Главная</Link>
               <Link href="/resources">Ресурсы</Link>

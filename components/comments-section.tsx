@@ -172,7 +172,7 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
             </div>
           </div>
         ) : (
-          <MarkdownRenderer markdown={comment.content} className="markdown-body comment-markdown" />
+          <MarkdownRenderer markdown={comment.content} className="markdown-body comment-markdown" allowRawHtml={false} />
         )}
         <div className="comment-actions">
           <button type="button" className="btn-secondary comment-action-btn" onClick={() => handleReply(comment)}>
